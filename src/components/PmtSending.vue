@@ -10,7 +10,8 @@
             <li><img src="../assets/images/icon-config.png" alt=""></li>
             <li><img src="../assets/images/icon-done.png" alt=""></li>
         </ul>
-        <div class="info">
+        <div v-if="Object.keys(nodeList).length == 0">
+            <div class="info">
             <p>
                 Стоимость регистрации ноды 2000 PMT, кроме того необходимо внести депозит в 10 ETH для чегототам.
             </p>
@@ -36,11 +37,53 @@
                 </p>
             </span>
         </div>
-        <div class="pmt-btn-wrapper">
+            <div class="pmt-btn-wrapper">
             <button class="btn">
                 <img src="../assets/images/icon-pm.png" alt="">
                 Перевести PMT
             </button>
+        </div>
+        </div>
+        <div v-if="Object.keys(nodeList).length !== 0" class="node-operation">
+            <p>У вас уже есть ноды, вы можете совершить с ними некоторые действия.</p>
+            <div class="node-item">
+                <div class="header">
+                    <div class="caption">
+                        Нода #1
+                    </div>
+                    <div class="status" style="align-self: flex-end">
+                        Активная нода (истекает 29.09.2022)
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="info-item">
+                        <div class="text">
+                            Загрузка ноды
+                        </div>
+                        <div class="information">
+                            21%
+                        </div>
+                    </div>
+                    <div class="values">
+                        <div class="info-item" style="padding-right: 15px">
+                            <div class="text">
+                                Оборот ETH
+                            </div>
+                            <div class="information">
+                                22 174
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="text">
+                                Скачиваний в месяц
+                            </div>
+                            <div class="information">
+                                55 232 150
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <router-link to="/registration/1" class="btn-back">
             Вернуться на предыдущий шаг
@@ -50,7 +93,31 @@
 
 <script>
     export default {
-        name: "pmt-sending"
+        name: "pmt-sending",
+        data() {
+            return {
+                nodeList: {}
+            }
+        },
+        methods: {
+            async getNodeList() {
+                return {}
+                // return {test: 1}
+            },
+            async getTokenBalance(address) {
+                // var web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/QLdzys0ezvUkTnMfUYpV"));
+                if (this.$store.state.unlockType == 'metamask') {
+
+                }
+                var tokenAddress = this.$store.state.contractAddress;
+                var tokenContract = web3.eth.contract(this.$store.state.abi).at(tokenAddress);
+                var tokenBalance = tokenContract.balanceOf(ethereumAddress).toNumber();
+                return tokenBalance;
+            }
+        },
+        mounted: async function () {
+            this.nodeList = await this.getNodeList();
+        },
     }
 </script>
 
@@ -144,6 +211,44 @@
                 font-weight: bold
                 img
                     margin-right: 10px
+        .node-operation
+            .node-item
+                width: 100%
+                height: 109px
+                padding: 16px 14px 14px 23px
+                background-color: #ffffff
+                .header
+                    display: flex
+                    justify-content: space-between
+                    .caption
+                        font-family: Archive
+                        font-size: 18px
+                        line-height: 1
+                        text-align: left
+                        color: #67777b
+                    .status
+                        font-family: Roboto
+                        font-size: 14px
+                        line-height: 1.29
+                        letter-spacing: normal
+                        color: #00e7d5
+                .content
+                    display: flex
+                    justify-content: space-between
+                .info-item
+                    display: flex
+                    flex-direction: column
+                    align-items: flex-end
+                    color: #67777b
+                    .text
+                        font-family: Roboto-Regular
+                        size: 14px
+                    .information
+                        font-family: Roboto-Bold
+                        font-size: 24px
+                .values
+                    display: flex
+
         .btn-back
             font-family: Roboto
             font-size: 14px

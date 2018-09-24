@@ -84,7 +84,7 @@
     }
     setTimeout(() => {
         for (let i = 1; i < arrCoords.length; i++) {
-            if (typeof ymaps.geocode != 'undefined') {
+            if (typeof ymaps != 'undefined') {
                 ymaps.geocode(arrCoords[0].coordinates).then(function (res) {
                     const myCoords = res.geoObjects.get(0).geometry.getCoordinates();
                     // Координаты НОДЫ i

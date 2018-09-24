@@ -38,6 +38,14 @@
 
     export default {
         name: "node-validation",
+        mounted: async function () {
+            if (!this.$store.state.user.isUserAuthenticated) {
+                this.$router.push({ path: `/registration/1` })
+            }
+            // web3.eth.getBalance(web3.eth.accounts[0], (err, balance) => {
+            //   console.log(web3.fromWei(balance, "ether") + " ETH");
+            // });
+        },
         methods: {
             async sendTransaction() {
               console.log('start');

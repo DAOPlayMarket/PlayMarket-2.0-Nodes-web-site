@@ -14,6 +14,10 @@ export default new Vuex.Store({
             isUserAuthenticated: false,
             address: '0x123'
         },
+        nodeList: [],
+        unlockType: '',
+        contractAddress: '0xc1322d8ae3b0e2e437e0ae36388d0cfd2c02f1c9',
+        abi: '',
         showSpinner: false,
         showStat: false
     },
