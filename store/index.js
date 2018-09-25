@@ -29,8 +29,10 @@ export default new Vuex.Store({
             state.server = 'https://n' + node_number + '.playmarket.io:3000';
         },
         SET_IS_USER_AUTHENTICATED (state, auth) {
+            console.log(auth);
             state.user.isUserAuthenticated = auth.isAuth;
             state.user.address = auth.address;
+            state.user.unlockType = auth.type;
         },
         SET_IS_USER_UNAUTHENTICATED (state) {
             state.user.isUserAuthenticated = false;

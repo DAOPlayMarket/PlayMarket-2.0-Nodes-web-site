@@ -5,10 +5,30 @@
         </div>
         <p>Шаг 2 из 4: Регистрация ноды</p>
         <ul class="steps">
-            <li class="selected"><img src="../assets/images/icon-load.png" alt=""></li>
-            <li class="selected"><img src="../assets/images/icon-pm.png" alt=""></li>
-            <li><img src="../assets/images/icon-config.png" alt=""></li>
-            <li><img src="../assets/images/icon-done.png" alt=""></li>
+            <li class="selected">
+                <span>
+                    <img src="../assets/images/icon-load.png" alt="">
+                </span>
+                <p>Загрузка ключа</p>
+            </li>
+            <li class="selected">
+                <span>
+                    <img src="../assets/images/icon-pm.png" alt="">
+                </span>
+                <p>Отправка PMT</p>
+            </li>
+            <li>
+                <span>
+                    <img src="../assets/images/icon-config.png" alt="">
+                </span>
+                <p>Настройка ноды</p>
+            </li>
+            <li>
+                <span>
+                    <img src="../assets/images/icon-done.png" alt="">
+                </span>
+                <p>Валидация ноды</p>
+            </li>
         </ul>
         <div v-if="Object.keys(nodeList).length == 0">
             <div class="info">
@@ -38,7 +58,7 @@
             </span>
         </div>
             <div class="pmt-btn-wrapper">
-            <button class="btn">
+            <button class="btn" @click="sendPmt()">
                 <img src="../assets/images/icon-pm.png" alt="">
                 Перевести PMT
             </button>
@@ -104,19 +124,34 @@
                 return {}
                 // return {test: 1}
             },
+            async getBalance(address) {
+                let balance = '';
+                if (this.$store.state.user.unlockType == 'metamask') {
+                    console.log('balance:');
+                    web3.eth.getBalance(address, (err, result) => {
+                        balance = web3.fromWei(result, "ether");
+                        console.log(balance + " ETH");
+                    });
+                }
+                return balance;
+            },
             async getTokenBalance(address) {
                 // var web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/QLdzys0ezvUkTnMfUYpV"));
                 if (this.$store.state.unlockType == 'metamask') {
 
                 }
-                var tokenAddress = this.$store.state.contractAddress;
+                var tokenAddress = this.$store.state.user.contractAddress;
                 var tokenContract = web3.eth.contract(this.$store.state.abi).at(tokenAddress);
                 var tokenBalance = tokenContract.balanceOf(ethereumAddress).toNumber();
                 return tokenBalance;
+            },
+            async sendPmt() {
+                this.$router.push({ path: `/registration/3` })
             }
         },
         mounted: async function () {
             this.nodeList = await this.getNodeList();
+            let balance = await this.getBalance(this.$store.state.user.address);
         },
     }
 </script>
@@ -148,41 +183,59 @@
             width: 400px
             padding: 35px 15px
             z-index: 45
+            text-align: center
             &:before
                 content: ''
                 height: 1px
                 width: 100%
-                background: #00e7d5
+                /*background: #00e7d5*/
+                background: #c6c6c6
                 position: absolute
-                top: 50%
+                top: 59px
                 left: 0
                 z-index: 43
             li
-                height: 48px
-                width: 48px
                 margin-right: 69px
-                border-radius: 100%
                 position: relative
                 z-index: 45
                 display: flex
                 align-items: center
                 justify-content: center
-                background-color: #c6c6c6
+                flex-direction: column
+                p
+                    padding-top: 13px
                 img
+                span
+                    display: flex
+                    height: 48px
+                    width: 48px
+                    align-items: center
+                    justify-content: center
+                    background-color: #c6c6c6
+                    border-radius: 100%
             li:nth-child(4)
                 margin-right: 0
             .selected
-                background-color: #00e7d5
                 position: relative
-                /*&:before*/
-                    /*content: ''*/
-                    /*height: 1px*/
-                    /*width: 100%*/
-                    /*position: absolute*/
-                    /*top: 50%*/
-                    /*left: 0*/
-                    /*z-index: 44*/
-                    /*background: #c6c6c6*/
+                z-index: 48
+                color: #00e7d5
+                span
+                    background-color: #00e7d5
+                    &:before
+                        content: ''
+                        height: 1px
+                        width: 90px
+                        position: absolute
+                        top: 24px
+                        left: -75px
+                        z-index: 44
+                        background: #00e7d5
+                    img
+                        z-index: 45
+            .selected:nth-child(1) > span:before
+                    width: 100%
+                    left: -15px
+
         .info
             p
                 padding-bottom: 20px
@@ -209,6 +262,7 @@
                 border-radius: 22.5px
                 font-size: 20px
                 font-weight: bold
+                cursor: pointer
                 img
                     margin-right: 10px
         .node-operation

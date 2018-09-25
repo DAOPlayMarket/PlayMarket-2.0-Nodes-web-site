@@ -5,23 +5,54 @@
             </div>
             <p>Шаг 1 из 4: Регистрация ноды</p>
             <ul class="steps">
-                <li class="selected"><img src="../assets/images/icon-load.png" alt=""></li>
-                <li><img src="../assets/images/icon-pm.png" alt=""></li>
-                <li><img src="../assets/images/icon-config.png" alt=""></li>
-                <li><img src="../assets/images/icon-done.png" alt=""></li>
+                <li class="selected">
+                    <span>
+                        <img src="../assets/images/icon-load.png" alt="">
+                    </span>
+                    <p>Загрузка ключа</p>
+                </li>
+                <li>
+                    <span>
+                        <img src="../assets/images/icon-pm.png" alt="">
+                    </span>
+                    <p>Отправка PMT</p>
+                </li>
+                <li>
+                    <span>
+                        <img src="../assets/images/icon-config.png" alt="">
+                    </span>
+                    <p>Настройка ноды</p>
+                </li>
+                <li>
+                    <span>
+                        <img src="../assets/images/icon-done.png" alt="">
+                    </span>
+                    <p>Валидация ноды</p>
+                </li>
             </ul>
 
             <ul class="unlock-list">
                 <li>
+                    <input type="radio" name="unlockType" v-model="unlockType" value="keystore">
+                    <span class="text-wrap">
+                        <p>Through keystore</p>
+                    </span>
                     <span class="checkmark"></span>
-                    <input type="radio" name="unlockType" v-model="unlockType" value="keystore">Through keystore
                 </li>
                 <li>
+                    <input type="radio" name="unlockType" v-model="unlockType" value="metamask">
+                    <span class="text-wrap">
+                        <p>Metamask service</p>
+                    </span>
                     <span class="checkmark"></span>
-                    <input type="radio" name="unlockType" v-model="unlockType" value="metamask">Metamask service</li>
+                </li>
                 <li>
+                    <input type="radio" name="unlockType" v-model="unlockType" value="ladger">
+                    <span class="text-wrap">
+                        <p>Ladger keystore</p>
+                    </span>
                     <span class="checkmark"></span>
-                    <input type="radio" name="unlockType" v-model="unlockType" value="ladger">Ladger keystore</li>
+                </li>
             </ul>
 
             <div class="info">
@@ -141,7 +172,8 @@
                         this.$store.commit('SET_IS_USER_AUTHENTICATED',
                             {
                                 isAuth: true,
-                                address: address
+                                address: address,
+                                type: 'metamask'
                             }
                         );
                         this.$router.push({ path: `/registration/2` })
@@ -177,6 +209,7 @@
         width: 400px
         padding: 35px 15px
         z-index: 45
+        text-align: center
         &:before
             content: ''
             height: 1px
@@ -184,54 +217,115 @@
             /*background: #00e7d5*/
             background: #c6c6c6
             position: absolute
-            top: 50%
+            top: 59px
             left: 0
             z-index: 43
         li
-            height: 48px
-            width: 48px
             margin-right: 69px
-            border-radius: 100%
             position: relative
             z-index: 45
             display: flex
             align-items: center
             justify-content: center
-            background-color: #c6c6c6
+            flex-direction: column
+            p
+                padding-top: 13px
             img
+            span
+                display: flex
+                height: 48px
+                width: 48px
+                align-items: center
+                justify-content: center
+                background-color: #c6c6c6
+                border-radius: 100%
         li:nth-child(4)
             margin-right: 0
         .selected
-            background-color: #00e7d5
             position: relative
             z-index: 48
-            &:before
-                content: ''
-                height: 1px
-                width: 100%
-                position: absolute
-                top: 50%
-                left: -15px
-                z-index: 44
-                background: #00e7d5
+            color: #00e7d5
+            span
+                background-color: #00e7d5
+                &:before
+                    content: ''
+                    height: 1px
+                    width: 100%
+                    position: absolute
+                    top: 24px
+                    left: -15px
+                    z-index: 44
+                    background: #00e7d5
+                img
+                    z-index: 45
     .unlock-list
         li
-            padding: 5px
+            padding: 15px
             position: relative
+            z-index: 45
+            display: flex
             .checkmark
-                /*position: absolute*/
-                /*top: 0*/
-                /*left: 0*/
-                /*height: 25px*/
-                /*width: 25px*/
-                /*background-color: #eee*/
+                position: absolute
+                top: 15px
+                left: 17px
+                height: 15px
+                width: 15px
+                background-color: inherit
+                border: 1px #00e7d5 solid
+                border-radius: 2px
+                z-index: 40
+                &:after
+                    content: ""
+                    position: absolute
+                    display: none
+                    top: 0
+                    left: 4px
+                    width: 5px
+                    height: 10px
+                    border: white solid
+                    border-width: 0 2px 2px 0
+                    transform: rotate(45deg)
             input
-                /*position: absolute*/
-                /*opacity: 0*/
-                /*cursor: pointer*/
-            input[type="radio"]:checked
-                ~ .checkmark
-                    /*background-color: #2196F3*/
+                height: 100%
+                width: 100%
+                position: absolute
+                opacity: 0
+                cursor: pointer
+                z-index: 45
+            input[type="radio"]:checked ~ .checkmark
+                background-color: #00e7d5
+            input[type="radio"]:checked ~ .checkmark:after
+                display: block
+            .text-wrap
+                padding-left: 30px
+            input[type="radio"]:checked ~ .text-wrap
+                &:before
+                    content: ''
+                    height: 45px
+                    width: 100%
+                    /*background: #00e7d5*/
+                    background: #fff
+                    position: absolute
+                    top: 0
+                    left: 0
+                    z-index: 10
+                    box-shadow: 0 0 2px 2px rgba(0, 231, 213, 0.1)
+                &:after
+                    content: ""
+                    position: absolute
+                    top: 18px
+                    right: 17px
+                    width: 7px
+                    height: 7px
+                    border: rgba(103, 119, 123, 0.6) solid
+                    border-width: 0 2px 2px 0
+                    transform: rotate(-45deg)
+                    z-index: 11
+                p
+                    z-index: 11
+                    position: relative
+    .info
+        padding-top: 35px
     .upload-btn-wrapper
         margin: 40px 0 40px 0
         position: relative
