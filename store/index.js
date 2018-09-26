@@ -12,14 +12,44 @@ export default new Vuex.Store({
         server: config.server,
         user: {
             isUserAuthenticated: false,
-            address: '0x123'
+            address: '0x123',
+            wallet: {},
+            unlockType: '',
         },
         nodeList: [],
-        unlockType: '',
         contractAddress: '0xc1322d8ae3b0e2e437e0ae36388d0cfd2c02f1c9',
         abi: '',
         showSpinner: false,
-        showStat: false
+        showStat: false,
+        contracts: {
+            ABI: [
+                     // transfer
+                     {
+                      "constant": false,
+                      "inputs": [
+                       {
+                        "name": "_to",
+                        "type": "address"
+                       },
+                       {
+                        "name": "_value",
+                        "type": "uint256"
+                       }
+                      ],
+                      "name": "transfer",
+                      "outputs": [
+                       {
+                        "name": "",
+                        "type": "bool"
+                       }
+                      ],
+                      "type": "function"
+                     }
+            ],
+            tokenAddress: '0x123',
+            nodeAddress: '0x123',
+
+        }
     },
     mutations: {
         UPDATE_SEARCH_KEY(state, searchKey) {
@@ -29,10 +59,12 @@ export default new Vuex.Store({
             state.server = 'https://n' + node_number + '.playmarket.io:3000';
         },
         SET_IS_USER_AUTHENTICATED (state, auth) {
-            console.log(auth);
             state.user.isUserAuthenticated = auth.isAuth;
             state.user.address = auth.address;
             state.user.unlockType = auth.type;
+            if (state.user.unlockType == 'keystore') {
+                state.user.wallet = auth.wallet;
+            }
         },
         SET_IS_USER_UNAUTHENTICATED (state) {
             state.user.isUserAuthenticated = false;

@@ -106,6 +106,9 @@
 
 <script>
     import ethWallet from 'ethereumjs-wallet'
+    import AppEth from "@ledgerhq/hw-app-eth"
+    import TransportU2F from "@ledgerhq/hw-transport-u2f"
+
 
     const readUploadedFileAsText = (inputFile) => {
         let f = new FileReader();
@@ -119,6 +122,13 @@
             };
             f.readAsText(inputFile);
         });
+    };
+
+    const getEthAddress = async () => {
+      // const transport = await TransportU2F.create();
+      // const eth = new AppEth(transport);
+      // const result = await eth.getAddress("44'/60'/0'/0/0");
+      // return result.bitcoinAddress;
     };
 
     export default {
@@ -154,7 +164,9 @@
                     this.$store.commit('SET_IS_USER_AUTHENTICATED',
                         {
                             isAuth: true,
-                            address: address
+                            address: address,
+                            wallet: myWallet,
+                            type: 'keystore'
                         }
                     );
                     this.errorMsg = null;
@@ -180,7 +192,10 @@
                     }
                 }
             }
-        }
+        },
+        mounted: async function () {
+            getEthAddress().then(a => console.log(a));
+        },
     }
 </script>
 

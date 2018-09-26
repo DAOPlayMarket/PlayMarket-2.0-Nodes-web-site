@@ -100,6 +100,11 @@
                 if (this.$store.state.unlockType == 'metamask') {
 
                 }
+            },
+            async addNode() {
+                //validate data
+                //send transaction
+
             }
         },
         mounted: async function () {

@@ -137,7 +137,7 @@
             },
             async getTokenBalance(address) {
                 // var web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/QLdzys0ezvUkTnMfUYpV"));
-                if (this.$store.state.unlockType == 'metamask') {
+                if (this.$store.state.user.unlockType == 'metamask') {
 
                 }
                 var tokenAddress = this.$store.state.user.contractAddress;
@@ -145,11 +145,52 @@
                 var tokenBalance = tokenContract.balanceOf(ethereumAddress).toNumber();
                 return tokenBalance;
             },
+            async TokenApprove() {
+                let address = this.$store.state.user.address;
+                const ABI = this.$store.state.contracts.ABI;
+                const tokenAddress = this.$store.state.contracts.tokenAddress;
+                const nodeAddress = this.$store.state.contracts.nodeAddress;
+                const toAddress = this.$store.state.contracts.nodeAddress;
+
+                //check token balance
+                let tokenBalance = await getTokenBalance(address);
+
+                if (tokenBalance < 0) {
+                    //if token balance not enough
+                    return false;
+                }
+
+                //approve token for transaction
+                let decimals = web3.toBigNumber(18);
+                let amount = web3.toBigNumber(100);
+                let token = web3.eth.contract(ABI).at(tokenAddress);
+                let value = amount.times(web3.toBigNumber(10).pow(decimals));
+                let getData = token.approve.getData(nodeAddress, amount, { from: address });
+                let transaction = new Tx(getData);
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    transaction.sign(this.$store.state.user.wallet.privateKey)
+                    //send signed transaction to PM service
+                    // .....some code
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    web3.eth.sendTransaction(transaction, (error, result) => {
+
+                    })
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+
+                }
+
+
+            },
             async sendPmt() {
-                this.$router.push({ path: `/registration/3` })
+                if (true) {
+                    // if token transfer approve
+                    this.$router.push({ path: `/registration/3` })
+                }
             }
         },
         mounted: async function () {
+            console.log(this.$store.state.user.wallet);
             this.nodeList = await this.getNodeList();
             let balance = await this.getBalance(this.$store.state.user.address);
         },
