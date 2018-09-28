@@ -140,7 +140,7 @@
                 if (this.$store.state.user.unlockType == 'metamask') {
 
                 }
-                var tokenAddress = this.$store.state.user.contractAddress;
+                var tokenAddress = this.$store.state.contracts.contractAddress;
                 var tokenContract = web3.eth.contract(this.$store.state.abi).at(tokenAddress);
                 var tokenBalance = tokenContract.balanceOf(ethereumAddress).toNumber();
                 return tokenBalance;
@@ -190,7 +190,6 @@
             }
         },
         mounted: async function () {
-            console.log(this.$store.state.user.wallet);
             this.nodeList = await this.getNodeList();
             let balance = await this.getBalance(this.$store.state.user.address);
         },

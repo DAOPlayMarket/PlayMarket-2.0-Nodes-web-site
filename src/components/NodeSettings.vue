@@ -9,25 +9,25 @@
                 <span>
                     <img src="../assets/images/icon-load.png" alt="">
                 </span>
-                <p>Загрузка ключа</p>
-            </li>
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-pm.png" alt="">
-                </span>
-                <p>Отправка PMT</p>
+                <p>Wallet unlock</p>
             </li>
             <li class="selected">
                 <span>
                     <img src="../assets/images/icon-config.png" alt="">
                 </span>
-                <p>Настройка ноды</p>
+                <p>Node Settings</p>
+            </li>
+            <li>
+                <span>
+                    <img src="../assets/images/icon-pm.png" alt="">
+                </span>
+                <p>Отправка PMT</p>
             </li>
             <li>
                 <span>
                     <img src="../assets/images/icon-done.png" alt="">
                 </span>
-                <p>Валидация ноды</p>
+                <p>Node validation</p>
             </li>
         </ul>
         <div class="info">
@@ -36,15 +36,15 @@
             </p>
             <div class="form-input">
                 IP
-                <input type="text" value="192.168.1.1">
+                <input type="text" v-model="ip">
             </div>
             <div class="form-input">
                 hash
-                <input type="text" value="0x5cd5d2ed1f79e1c9bc055bb29663060b1c4007bf">
+                <input type="text" v-model="hash">
             </div>
             <div class="form-input">
                 hashTag
-                <input type="text" value="IPFS">
+                <input type="text" v-model="this.hashTag" disabled>
             </div>
             <span>
                 From:
@@ -55,21 +55,22 @@
             <span>
                 To:
                 <p class="values">
-                    0xb9641870af8bc16c745706df75ee7f4a4433f2b1
+                    {{ $store.state.contracts.contractAddress }}
                 </p>
             </span>
             <span>
                 Координаты ноды
-                <p>
-                    109.194.37.82 <span>(Изменить)</span>
+                <p v-model="coordinates">
+                    109.194.37.82
                 </p>
+                <div>(Изменить)</div>
             </span>
-            <span>
-                Value:
-                <p class="values">
-                    10 ETH
-                </p>
-            </span>
+            <!--<span>-->
+                <!--Value:-->
+                <!--<p class="values">-->
+                    <!--10 ETH-->
+                <!--</p>-->
+            <!--</span>-->
         </div>
         <div class="settings-btn-wrapper">
             <button class="btn">
@@ -84,11 +85,20 @@
 </template>
 
 <script>
+    import Web3 from 'web3'
+    import web3Utils from 'web3-utils'
+    import ethTx from 'ethereumjs-tx'
+
     export default {
         name: "node-settings",
         data() {
             return {
-                nodeList: {}
+                nodeList: {},
+                hashType: 1,
+                hashTag: 'IPFS',
+                hash: '0x5cd5d2ed1f79e1c9bc055bb29663060b1c4007bf',
+                ip: '192.168.1.1',
+                coordinates: '109.194.37.82'
             }
         },
         methods: {
@@ -105,10 +115,174 @@
                 //validate data
                 //send transaction
 
+            },
+            async getDeposite() {
+
+            },
+            async sendKeystoreTx() {
+                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                // console.log(this.$store.state.user.wallet);
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = [
+                                   {
+                                       "constant": false,
+                                       "inputs": [
+                                           {
+                                               "name": "_hashType",
+                                               "type": "uint32"
+                                           },
+                                           {
+                                               "name": "_hash",
+                                               "type": "string"
+                                           },
+                                           {
+                                               "name": "_ip",
+                                               "type": "string"
+                                           },
+                                           {
+                                               "name": "_coordinates",
+                                               "type": "string"
+                                           }
+                                       ],
+                                       "name": "addNode",
+                                       "outputs": [],
+                                       "payable": false,
+                                       "stateMutability": "nonpayable",
+                                       "type": "function"
+                                   },
+                               ];
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr)
+
+                let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
+
+                console.log(txData);
+
+                let txParams = {
+                    // nonce: web3Utils.toHex(infoForTx.countTx),
+                    from: address,
+                    gasPrice: web3Utils.toHex(10),
+                    gasLimit: web3Utils.toHex(250000),
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
+                console.log(txParams)
+
+                let tx = new ethTx(txParams);
+                let rawTx = tx.sign(this.$store.state.user.wallet._privKey);
+                let serializedTx = tx.serialize();
+
+                localweb3.eth.sendSignedTransaction(serializedTx, function (err, transactionHash) {
+                  console.log(err);
+                  console.log(transactionHash);
+                });
+
+
+            },
+            async sendMetamaskTx() {
+                if (typeof web3 !== 'undefined') {
+                   //check that metaMask is installed
+                    const localWeb3 = new Web3(window.web3.currentProvider);
+
+                    let rawTransaction = {
+                      "from": "0x4319825eEFea536693AbA06469e6dE0b5e7693fe",
+                      "to": "0x5EE74D1DEF74BA3316fb217D62d4689D870Ce0bF",
+                      "value": web3Utils.toHex(web3Utils.toWei("0.001", "ether")),
+                      "data": "0xdf",
+                      "gas": 200000,
+                      "chainId": 3
+                    };
+
+                    localWeb3.eth.getAccounts().then(account => {
+                       localWeb3.eth.getBalance(account[0],(error, result) => {
+                           let address = account[0];
+                           let balance = result;
+                           //check balance
+                           if (true) {
+
+                               const abi = [
+                                   {
+                                       "constant": false,
+                                       "inputs": [
+                                           {
+                                               "name": "_hashType",
+                                               "type": "uint32"
+                                           },
+                                           {
+                                               "name": "_hash",
+                                               "type": "string"
+                                           },
+                                           {
+                                               "name": "_ip",
+                                               "type": "string"
+                                           },
+                                           {
+                                               "name": "_coordinates",
+                                               "type": "string"
+                                           }
+                                       ],
+                                       "name": "addNode",
+                                       "outputs": [],
+                                       "payable": false,
+                                       "stateMutability": "nonpayable",
+                                       "type": "function"
+                                   },
+                               ];
+                               const contractAdr = this.$store.state.contracts.contractAddress;
+
+                               let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
+
+                               const options = {
+                                  // "value": web3Utils.toHex(web3Utils.toWei("0.001", "ether")),
+                                   'from': address,
+                                   "to": contractAdr,
+                                   'gas': 500000,
+                                   'gasPrice': 100,
+                               };
+
+                               // let data = {
+                               //      function: 'addNode',
+                               //      params: [hashType, reserv, hash, ip, coordinates]
+                               //  };
+
+                               // let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
+                               // console.log(txData);
+
+                               nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).call(options,(error,tHash) => {
+                                   console.log(error);
+                                   console.log(tHash);
+
+                               });
+
+                               let tx = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
+                               let transaction = {
+                                   'from': address,
+                                   "to": contractAdr,
+                                   'gas': 500000,
+                                   'gasPrice': 1000,
+                                   'data': tx,
+                                   "chainId": 4
+                               };
+                               // localWeb3.eth.sendTransaction(transaction, (err, transactionHash) => {
+                               //     if (!err) {
+                               //         console.log(transactionHash + " success");
+                               //     }
+                               // });
+                           }
+                       });
+                    });
+
+                }
+                else{
+                   console.log('MetaMask is not installed')
+                }
             }
         },
         mounted: async function () {
-
+            // await this.sendMetamaskTx();
+            await this.sendKeystoreTx();
+            // await this.getDeposite();
         },
     }
 </script>

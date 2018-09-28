@@ -2,8 +2,8 @@
     <div id="registration">
         <div class="gradient-block"></div>
         <wallet-unlock v-if="$route.params.step == 1"></wallet-unlock>
-        <pmt-sending v-if="$route.params.step == 2"></pmt-sending>
-        <node-settings v-if="$route.params.step == 3"></node-settings>
+        <node-settings v-if="$route.params.step == 2"></node-settings>
+        <pmt-sending v-if="$route.params.step == 3"></pmt-sending>
         <node-validation v-if="$route.params.step == 4"></node-validation>
     </div>
 </template>

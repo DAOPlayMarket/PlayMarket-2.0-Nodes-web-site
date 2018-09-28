@@ -105,6 +105,7 @@
 </template>
 
 <script>
+    import Web3 from 'web3'
     import ethWallet from 'ethereumjs-wallet'
     import AppEth from "@ledgerhq/hw-app-eth"
     import TransportU2F from "@ledgerhq/hw-transport-u2f"
@@ -179,17 +180,22 @@
             },
             async loginMetamask() {
                 if (typeof web3 !== 'undefined') {
-                    const address = web3.eth.accounts[0];
-                    if (typeof address !== 'undefined') {
-                        this.$store.commit('SET_IS_USER_AUTHENTICATED',
-                            {
-                                isAuth: true,
-                                address: address,
-                                type: 'metamask'
-                            }
-                        );
-                        this.$router.push({ path: `/registration/2` })
-                    }
+                   //check that metaMask is installed
+                    const localWeb3 = new Web3(window.web3.currentProvider);
+
+                    localWeb3.eth.getAccounts().then(account => {
+                        let address = account[0];
+                        if (typeof address !== 'undefined') {
+                            this.$store.commit('SET_IS_USER_AUTHENTICATED',
+                                {
+                                    isAuth: true,
+                                    address: address,
+                                    type: 'metamask'
+                                }
+                            );
+                            this.$router.push({ path: `/registration/2` })
+                        }
+                    });
                 }
             }
         },

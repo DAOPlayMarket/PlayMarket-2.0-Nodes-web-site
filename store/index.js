@@ -17,7 +17,6 @@ export default new Vuex.Store({
             unlockType: '',
         },
         nodeList: [],
-        contractAddress: '0xc1322d8ae3b0e2e437e0ae36388d0cfd2c02f1c9',
         abi: '',
         showSpinner: false,
         showStat: false,
@@ -48,6 +47,7 @@ export default new Vuex.Store({
             ],
             tokenAddress: '0x123',
             nodeAddress: '0x123',
+            contractAddress: '0xdD483256d16DA1F043C2f16ed10a9F8EBcD64C77',
 
         }
     },
