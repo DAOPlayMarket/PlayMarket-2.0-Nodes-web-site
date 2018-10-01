@@ -1,4 +1,4 @@
-# pm_node_registration
+# Playmarket2.0 node registration
 
 > Playmarket2.0 node registration
 
