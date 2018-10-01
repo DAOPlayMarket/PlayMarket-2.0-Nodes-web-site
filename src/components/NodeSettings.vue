@@ -72,7 +72,7 @@
                 <!--</p>-->
             <!--</span>-->
         </div>
-        <div class="settings-btn-wrapper">
+        <div class="settings-btn-wrapper" @click="addNode()">
             <button class="btn">
                 <img src="../assets/images/icon-config.png" alt="">
                 завершить настройку
@@ -82,6 +82,7 @@
             Вернуться на предыдущий шаг
         </router-link >
     </div>
+
 </template>
 
 <script>
@@ -114,7 +115,131 @@
             async addNode() {
                 //validate data
                 //send transaction
+                let localweb3 = {};
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localweb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
+                }
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = [
+           {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_hashType",
+                    "type": "uint32"
+                },
+                {
+                    "name": "_hash",
+                    "type": "string"
+                },
+                {
+                    "name": "_ip",
+                    "type": "string"
+                },
+                {
+                    "name": "_coordinates",
+                    "type": "string"
+                }
+            ],
+            "name": "addNode",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+           },
+           {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "_node",
+                        "type": "address"
+                    }
+                ],
+                "name": "getInfoNode",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint32"
+                    },
+                    {
+                        "name": "",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "",
+                        "type": "string"
+                    },
+                    {
+                        "name": "",
+                        "type": "string"
+                    },
+                    {
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+        ];
+
+                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
+                let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
+                let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                    value: web3.utils.toHex(0)
+                }) + 100000);
+
+                let txParams = {
+                    nonce: web3Utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: '0x00',
+                    to: contractAdr,
+                    from: address,
+                    data: txData,
+                    chainId: 4
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    let tx = new ethTx(txParams);
+                    tx.sign(this.$store.state.user.wallet._privKey);
+                    let serializedTx = tx.serialize();
+
+                    let raw = "0x" + serializedTx.toString("hex");
+
+                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('TX:');
+                      console.log(transactionHash);
+                    });
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('TX:');
+                      console.log(transactionHash);
+                    });
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
+                }
+                // this.$router.push({ path: `/registration/3` })
             },
             async getDeposite() {
 
@@ -125,59 +250,143 @@
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
                 const abi = [
-                                   {
-                                       "constant": false,
-                                       "inputs": [
-                                           {
-                                               "name": "_hashType",
-                                               "type": "uint32"
-                                           },
-                                           {
-                                               "name": "_hash",
-                                               "type": "string"
-                                           },
-                                           {
-                                               "name": "_ip",
-                                               "type": "string"
-                                           },
-                                           {
-                                               "name": "_coordinates",
-                                               "type": "string"
-                                           }
-                                       ],
-                                       "name": "addNode",
-                                       "outputs": [],
-                                       "payable": false,
-                                       "stateMutability": "nonpayable",
-                                       "type": "function"
-                                   },
-                               ];
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr)
+                   {
+                    "constant": false,
+                    "inputs": [
+                        {
+                            "name": "_hashType",
+                            "type": "uint32"
+                        },
+                        {
+                            "name": "_hash",
+                            "type": "string"
+                        },
+                        {
+                            "name": "_ip",
+                            "type": "string"
+                        },
+                        {
+                            "name": "_coordinates",
+                            "type": "string"
+                        }
+                    ],
+                    "name": "addNode",
+                    "outputs": [],
+                    "payable": false,
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                   },
+                   {
+                        "constant": true,
+                        "inputs": [
+                            {
+                                "name": "_node",
+                                "type": "address"
+                            }
+                        ],
+                        "name": "getInfoNode",
+                        "outputs": [
+                            {
+                                "name": "",
+                                "type": "uint32"
+                            },
+                            {
+                                "name": "",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "",
+                                "type": "uint256"
+                            },
+                            {
+                                "name": "",
+                                "type": "string"
+                            },
+                            {
+                                "name": "",
+                                "type": "string"
+                            },
+                            {
+                                "name": "",
+                                "type": "string"
+                            }
+                        ],
+                        "payable": false,
+                        "stateMutability": "view",
+                        "type": "function"
+                    },
+                ];
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                 let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
+
+                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
 
                 console.log(txData);
 
                 let txParams = {
-                    // nonce: web3Utils.toHex(infoForTx.countTx),
-                    from: address,
-                    gasPrice: web3Utils.toHex(10),
+                    nonce: web3Utils.toHex(nonce),
+                    gasPrice: web3Utils.toHex(100000000),
                     gasLimit: web3Utils.toHex(250000),
+                    value: '0x00',
                     to: contractAdr,
                     data: txData,
                     chainId: 4
                 };
-                console.log(txParams)
+                console.log(txParams);
 
                 let tx = new ethTx(txParams);
-                let rawTx = tx.sign(this.$store.state.user.wallet._privKey);
+                tx.sign(this.$store.state.user.wallet._privKey);
+                // let rawTx = tx.sign(this.$store.state.user.wallet._privKey);
                 let serializedTx = tx.serialize();
 
-                localweb3.eth.sendSignedTransaction(serializedTx, function (err, transactionHash) {
+                let raw = "0x" + serializedTx.toString("hex");
+
+                console.log(address);
+
+                localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
+                  console.log('error:');
                   console.log(err);
+                  console.log('TX:');
                   console.log(transactionHash);
                 });
 
+            },
+            async sendEth() {
+                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+
+                const address = this.$store.state.user.address;
+
+                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+
+                console.log(nonce);
+
+                let txParams = {
+                    nonce: web3Utils.toHex(nonce),
+                    gasPrice: web3Utils.toHex(100000000),
+                    gasLimit: web3Utils.toHex(250000),
+                    value: web3Utils.toHex(10),
+                    to: '0x5EE74D1DEF74BA3316fb217D62d4689D870Ce0bF',
+                    data: '0x123',
+                    chainId: 4
+                };
+                console.log(txParams);
+
+                let tx = new ethTx(txParams);
+                tx.sign(this.$store.state.user.wallet._privKey);
+
+                let serializedTx = tx.serialize();
+
+                let raw = "0x" + serializedTx.toString("hex");
+
+                localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
+                  console.log('error:');
+                  console.log(err);
+                  console.log('TX:');
+                  console.log(transactionHash);
+                  localweb3.eth.getTransactionReceipt(transactionHash)
+                    .then(console.log)
+                });
 
             },
             async sendMetamaskTx() {
@@ -277,12 +486,315 @@
                 else{
                    console.log('MetaMask is not installed')
                 }
+            },
+            async getInfoNode() {
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const contractAdr = this.$store.state.contracts.contractAddress;
+                    const address = this.$store.state.user.address;
+                    const abi = [
+                       {
+                        "constant": false,
+                        "inputs": [
+                            {
+                                "name": "_hashType",
+                                "type": "uint32"
+                            },
+                            {
+                                "name": "_hash",
+                                "type": "string"
+                            },
+                            {
+                                "name": "_ip",
+                                "type": "string"
+                            },
+                            {
+                                "name": "_coordinates",
+                                "type": "string"
+                            }
+                        ],
+                        "name": "addNode",
+                        "outputs": [],
+                        "payable": false,
+                        "stateMutability": "nonpayable",
+                        "type": "function"
+                       },
+                       {
+                            "constant": true,
+                            "inputs": [
+                                {
+                                    "name": "_node",
+                                    "type": "address"
+                                }
+                            ],
+                            "name": "getInfoNode",
+                            "outputs": [
+                                {
+                                    "name": "",
+                                    "type": "uint32"
+                                },
+                                {
+                                    "name": "",
+                                    "type": "bool"
+                                },
+                                {
+                                    "name": "",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "name": "",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "",
+                                    "type": "string"
+                                }
+                            ],
+                            "payable": false,
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                    ];
+                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                    let txData = nodeContract.methods.getInfoNode(address).call(function (err, result) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('res:');
+                      console.log(result);
+                    });
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    if (typeof web3 !== 'undefined') {
+                       //check that metaMask is installed
+
+                        const localWeb3 = new Web3(window.web3.currentProvider);
+
+                        localWeb3.eth.getAccounts().then(account => {
+                           let address = account[0];
+                           const abi = [
+                                       {
+                            "constant": false,
+                            "inputs": [
+                                {
+                                    "name": "_hashType",
+                                    "type": "uint32"
+                                },
+                                {
+                                    "name": "_hash",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "_ip",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "_coordinates",
+                                    "type": "string"
+                                }
+                            ],
+                            "name": "addNode",
+                            "outputs": [],
+                            "payable": false,
+                            "stateMutability": "nonpayable",
+                            "type": "function"
+                           },
+                           {
+                                "constant": true,
+                                "inputs": [
+                                    {
+                                        "name": "_node",
+                                        "type": "address"
+                                    }
+                                ],
+                                "name": "getInfoNode",
+                                "outputs": [
+                                    {
+                                        "name": "",
+                                        "type": "uint32"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "uint256"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "string"
+                                    }
+                                ],
+                                "payable": false,
+                                "stateMutability": "view",
+                                "type": "function"
+                            },
+                           ];
+                           const contractAdr = this.$store.state.contracts.contractAddress;
+
+                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
+
+                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
+                              console.log('error:');
+                              console.log(err);
+                              console.log('res:');
+                              console.log(result);
+                            });
+                        });
+
+                    } else{
+                       console.log('MetaMask is not installed')
+                    }
+                }
+            },
+            async getConfirmationNode() {
+                const abi = [
+                    {
+                        "constant": true,
+                        "inputs": [
+                            {
+                                "name": "_node",
+                                "type": "address"
+                            }
+                        ],
+                        "name": "getConfirmationNode",
+                        "outputs": [
+                            {
+                                "name": "",
+                                "type": "bool"
+                            }
+                        ],
+                        "payable": false,
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
+                ];
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const contractAdr = this.$store.state.contracts.contractAddress;
+                    const address = this.$store.state.user.address;
+
+                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                    let txData = nodeContract.methods.getConfirmationNode(address).call(function (err, result) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('res:');
+                      console.log(result);
+                    });
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    if (typeof web3 !== 'undefined') {
+                       //check that metaMask is installed
+
+                        const localWeb3 = new Web3(window.web3.currentProvider);
+
+                        localWeb3.eth.getAccounts().then(account => {
+                           let address = account[0];
+                           const abi = [
+                                       {
+                            "constant": false,
+                            "inputs": [
+                                {
+                                    "name": "_hashType",
+                                    "type": "uint32"
+                                },
+                                {
+                                    "name": "_hash",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "_ip",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "_coordinates",
+                                    "type": "string"
+                                }
+                            ],
+                            "name": "addNode",
+                            "outputs": [],
+                            "payable": false,
+                            "stateMutability": "nonpayable",
+                            "type": "function"
+                           },
+                           {
+                                "constant": true,
+                                "inputs": [
+                                    {
+                                        "name": "_node",
+                                        "type": "address"
+                                    }
+                                ],
+                                "name": "getInfoNode",
+                                "outputs": [
+                                    {
+                                        "name": "",
+                                        "type": "uint32"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "uint256"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "",
+                                        "type": "string"
+                                    }
+                                ],
+                                "payable": false,
+                                "stateMutability": "view",
+                                "type": "function"
+                            },
+                           ];
+                           const contractAdr = this.$store.state.contracts.contractAddress;
+
+                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
+
+                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
+                              console.log('error:');
+                              console.log(err);
+                              console.log('res:');
+                              console.log(result);
+                            });
+                        });
+
+                    } else{
+                       console.log('MetaMask is not installed')
+                    }
+                }
             }
         },
         mounted: async function () {
             // await this.sendMetamaskTx();
-            await this.sendKeystoreTx();
+            // await this.sendKeystoreTx();
+            // await this.sendEth();
             // await this.getDeposite();
+            await this.getInfoNode();
+            await this.getConfirmationNode();
         },
     }
 </script>

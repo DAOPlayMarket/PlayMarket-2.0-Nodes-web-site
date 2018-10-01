@@ -47,7 +47,7 @@ export default new Vuex.Store({
             ],
             tokenAddress: '0x123',
             nodeAddress: '0x123',
-            contractAddress: '0xdD483256d16DA1F043C2f16ed10a9F8EBcD64C77',
+            contractAddress: '0x125f5bc80B286D481A4B23B4397d1E56a6eadA5a',
 
         }
     },
