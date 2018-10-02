@@ -3,7 +3,7 @@
         <div class="header">
             Регистрация ноды
         </div>
-        <p>Шаг 3 из 4: Настройки ноды</p>
+        <p>Step 2 of 4: Node registration</p>
         <ul class="steps">
             <li class="selected">
                 <span>
@@ -21,7 +21,7 @@
                 <span>
                     <img src="../assets/images/icon-pm.png" alt="">
                 </span>
-                <p>Отправка PMT</p>
+                <p>Making deposit</p>
             </li>
             <li>
                 <span>
@@ -30,7 +30,7 @@
                 <p>Node validation</p>
             </li>
         </ul>
-        <div class="info">
+        <div v-if="!regStatus" class="info">
             <p>
                 Настройка ноды включает в себя отправку эфира(deposit), hash, hashTag, IP, и координат ноды.
             </p>
@@ -46,41 +46,76 @@
                 hashTag
                 <input type="text" v-model="this.hashTag" disabled>
             </div>
-            <span>
-                From:
-                <p class="values">
-                    {{ $store.state.user.address }}
-                </p>
-            </span>
-            <span>
-                To:
-                <p class="values">
-                    {{ $store.state.contracts.contractAddress }}
-                </p>
-            </span>
-            <span>
+            <!--<span>-->
+                <!--From:-->
+                <!--<p class="values">-->
+                    <!--{{ $store.state.user.address }}-->
+                <!--</p>-->
+            <!--</span>-->
+            <!--<span>-->
+                <!--To:-->
+                <!--<p class="values">-->
+                    <!--{{ $store.state.contracts.contractAddress }}-->
+                <!--</p>-->
+            <!--</span>-->
+            <div class="form-input">
                 Координаты ноды
-                <p v-model="coordinates">
-                    109.194.37.82
-                </p>
-                <div>(Изменить)</div>
-            </span>
+                <input type="text" v-model="coordinates">
+            </div>
             <!--<span>-->
                 <!--Value:-->
                 <!--<p class="values">-->
                     <!--10 ETH-->
                 <!--</p>-->
             <!--</span>-->
-        </div>
-        <div class="settings-btn-wrapper" @click="addNode()">
+            <div class="settings-btn-wrapper" @click="addNode()">
             <button class="btn">
                 <img src="../assets/images/icon-config.png" alt="">
                 завершить настройку
             </button>
         </div>
-        <router-link to="/registration/2" class="btn-back">
-            Вернуться на предыдущий шаг
-        </router-link >
+            <router-link to="/registration/1" class="btn-back">
+                Вернуться на предыдущий шаг
+            </router-link >
+        </div>
+        <div v-if="regStatus" class="info">
+            <p>
+                Here You can update your Playmarket 2.0 Node info.
+            </p>
+            <div class="form-input">
+                IP
+                <input type="text" v-model="ip">
+            </div>
+            <div class="form-input">
+                hash
+                <input type="text" v-model="hash">
+            </div>
+            <div class="form-input">
+                hashTag
+                <input type="text" v-model="this.hashTag" disabled>
+            </div>
+
+            <div class="form-input">
+                Координаты ноды
+                <input type="text" v-model="coordinates">
+            </div>
+            <div class="settings-btn-wrapper" @click="changeInfoNode()">
+                <button class="btn">
+                    <img src="../assets/images/icon-config.png" alt="">
+                    Change info
+                </button>
+            </div>
+            <div class="settings-btn-wrapper" @click="$router.push({ path: `/registration/3` })">
+                <button class="btn">
+                    <img src="../assets/images/icon-config.png" alt="">
+                    Next step
+                </button>
+            </div>
+            <router-link to="/registration/1" class="btn-back">
+                Вернуться на предыдущий шаг
+            </router-link >
+
+        </div>
     </div>
 
 </template>
@@ -94,7 +129,8 @@
         name: "node-settings",
         data() {
             return {
-                nodeList: {},
+                regStatus: false,
+                nodeConfirmation: false,
                 hashType: 1,
                 hashTag: 'IPFS',
                 hash: '0x5cd5d2ed1f79e1c9bc055bb29663060b1c4007bf',
@@ -126,73 +162,7 @@
 
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
-                const abi = [
-           {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "_hashType",
-                    "type": "uint32"
-                },
-                {
-                    "name": "_hash",
-                    "type": "string"
-                },
-                {
-                    "name": "_ip",
-                    "type": "string"
-                },
-                {
-                    "name": "_coordinates",
-                    "type": "string"
-                }
-            ],
-            "name": "addNode",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-           },
-           {
-                "constant": true,
-                "inputs": [
-                    {
-                        "name": "_node",
-                        "type": "address"
-                    }
-                ],
-                "name": "getInfoNode",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint32"
-                    },
-                    {
-                        "name": "",
-                        "type": "bool"
-                    },
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    },
-                    {
-                        "name": "",
-                        "type": "string"
-                    },
-                    {
-                        "name": "",
-                        "type": "string"
-                    },
-                    {
-                        "name": "",
-                        "type": "string"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-        ];
+                const abi = this.$store.state.contracts.ABI;
 
                 let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
@@ -202,7 +172,7 @@
                     from: address,
                     to: contractAdr,
                     data: txData,
-                    value: web3.utils.toHex(0)
+                    value: web3Utils.toHex(0)
                 }) + 100000);
 
                 let txParams = {
@@ -241,81 +211,91 @@
                 }
                 // this.$router.push({ path: `/registration/3` })
             },
+            async changeInfoNode() {
+                let localweb3 = {};
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localweb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
+                }
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+
+                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.changeInfoNode(this.hash, this.hashType, this.ip, this.coordinates).encodeABI();
+                let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
+                let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                    value: web3Utils.toHex(0)
+                }) + 100000);
+
+                let txParams = {
+                    nonce: web3Utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: '0x00',
+                    to: contractAdr,
+                    from: address,
+                    data: txData,
+                    chainId: 4
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    let tx = new ethTx(txParams);
+                    tx.sign(this.$store.state.user.wallet._privKey);
+                    let serializedTx = tx.serialize();
+
+                    let raw = "0x" + serializedTx.toString("hex");
+
+                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('TX:');
+                      console.log(transactionHash);
+                    });
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('TX:');
+                      console.log(transactionHash);
+                    });
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
+                }
+            },
             async getDeposite() {
 
+            },
+            async getDepositNode() {
+                const abi = this.$store.state.contracts.ABI;
+
+                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                let txData = nodeContract.methods.getDepositNode(address).call((err, result) => {
+                    console.log('error:');
+                    console.log(err);
+                    console.log('res:');
+                    console.log(result);
+                });
             },
             async sendKeystoreTx() {
                 const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
                 // console.log(this.$store.state.user.wallet);
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
-                const abi = [
-                   {
-                    "constant": false,
-                    "inputs": [
-                        {
-                            "name": "_hashType",
-                            "type": "uint32"
-                        },
-                        {
-                            "name": "_hash",
-                            "type": "string"
-                        },
-                        {
-                            "name": "_ip",
-                            "type": "string"
-                        },
-                        {
-                            "name": "_coordinates",
-                            "type": "string"
-                        }
-                    ],
-                    "name": "addNode",
-                    "outputs": [],
-                    "payable": false,
-                    "stateMutability": "nonpayable",
-                    "type": "function"
-                   },
-                   {
-                        "constant": true,
-                        "inputs": [
-                            {
-                                "name": "_node",
-                                "type": "address"
-                            }
-                        ],
-                        "name": "getInfoNode",
-                        "outputs": [
-                            {
-                                "name": "",
-                                "type": "uint32"
-                            },
-                            {
-                                "name": "",
-                                "type": "bool"
-                            },
-                            {
-                                "name": "",
-                                "type": "uint256"
-                            },
-                            {
-                                "name": "",
-                                "type": "string"
-                            },
-                            {
-                                "name": "",
-                                "type": "string"
-                            },
-                            {
-                                "name": "",
-                                "type": "string"
-                            }
-                        ],
-                        "payable": false,
-                        "stateMutability": "view",
-                        "type": "function"
-                    },
-                ];
+                const abi = this.$store.state.contracts.ABI;
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                 let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
@@ -410,34 +390,7 @@
                            //check balance
                            if (true) {
 
-                               const abi = [
-                                   {
-                                       "constant": false,
-                                       "inputs": [
-                                           {
-                                               "name": "_hashType",
-                                               "type": "uint32"
-                                           },
-                                           {
-                                               "name": "_hash",
-                                               "type": "string"
-                                           },
-                                           {
-                                               "name": "_ip",
-                                               "type": "string"
-                                           },
-                                           {
-                                               "name": "_coordinates",
-                                               "type": "string"
-                                           }
-                                       ],
-                                       "name": "addNode",
-                                       "outputs": [],
-                                       "payable": false,
-                                       "stateMutability": "nonpayable",
-                                       "type": "function"
-                                   },
-                               ];
+                               const abi = this.$store.state.contracts.ABI;
                                const contractAdr = this.$store.state.contracts.contractAddress;
 
                                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
@@ -492,80 +445,21 @@
                     const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
-                    const abi = [
-                       {
-                        "constant": false,
-                        "inputs": [
-                            {
-                                "name": "_hashType",
-                                "type": "uint32"
-                            },
-                            {
-                                "name": "_hash",
-                                "type": "string"
-                            },
-                            {
-                                "name": "_ip",
-                                "type": "string"
-                            },
-                            {
-                                "name": "_coordinates",
-                                "type": "string"
-                            }
-                        ],
-                        "name": "addNode",
-                        "outputs": [],
-                        "payable": false,
-                        "stateMutability": "nonpayable",
-                        "type": "function"
-                       },
-                       {
-                            "constant": true,
-                            "inputs": [
-                                {
-                                    "name": "_node",
-                                    "type": "address"
-                                }
-                            ],
-                            "name": "getInfoNode",
-                            "outputs": [
-                                {
-                                    "name": "",
-                                    "type": "uint32"
-                                },
-                                {
-                                    "name": "",
-                                    "type": "bool"
-                                },
-                                {
-                                    "name": "",
-                                    "type": "uint256"
-                                },
-                                {
-                                    "name": "",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "",
-                                    "type": "string"
-                                }
-                            ],
-                            "payable": false,
-                            "stateMutability": "view",
-                            "type": "function"
-                        },
-                    ];
+                    const abi = this.$store.state.contracts.ABI;
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                    let txData = nodeContract.methods.getInfoNode(address).call(function (err, result) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('res:');
-                      console.log(result);
+                    nodeContract.methods.getInfoNode(address).call((err, result) => {
+                        this.regStatus = typeof result != 'undefined';
+                        if (this.regStatus) {
+                            this.hashType = result[0];
+                            if (this.hashType == 1) {
+                                this.hashTag = 'IPFS';
+                            }
+                            this.hash = result[3];
+                            this.ip = result[4];
+                            this.coordinates = result[5];
+                            this.getConfirmationNode();
+                        }
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     if (typeof web3 !== 'undefined') {
@@ -575,73 +469,7 @@
 
                         localWeb3.eth.getAccounts().then(account => {
                            let address = account[0];
-                           const abi = [
-                                       {
-                            "constant": false,
-                            "inputs": [
-                                {
-                                    "name": "_hashType",
-                                    "type": "uint32"
-                                },
-                                {
-                                    "name": "_hash",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "_ip",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "_coordinates",
-                                    "type": "string"
-                                }
-                            ],
-                            "name": "addNode",
-                            "outputs": [],
-                            "payable": false,
-                            "stateMutability": "nonpayable",
-                            "type": "function"
-                           },
-                           {
-                                "constant": true,
-                                "inputs": [
-                                    {
-                                        "name": "_node",
-                                        "type": "address"
-                                    }
-                                ],
-                                "name": "getInfoNode",
-                                "outputs": [
-                                    {
-                                        "name": "",
-                                        "type": "uint32"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "bool"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "uint256"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "string"
-                                    }
-                                ],
-                                "payable": false,
-                                "stateMutability": "view",
-                                "type": "function"
-                            },
-                           ];
+                           const abi = this.$store.state.contracts.ABI;
                            const contractAdr = this.$store.state.contracts.contractAddress;
 
                            let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
@@ -660,27 +488,7 @@
                 }
             },
             async getConfirmationNode() {
-                const abi = [
-                    {
-                        "constant": true,
-                        "inputs": [
-                            {
-                                "name": "_node",
-                                "type": "address"
-                            }
-                        ],
-                        "name": "getConfirmationNode",
-                        "outputs": [
-                            {
-                                "name": "",
-                                "type": "bool"
-                            }
-                        ],
-                        "payable": false,
-                        "stateMutability": "view",
-                        "type": "function"
-                    }
-                ];
+                const abi = this.$store.state.contracts.ABI;
 
                 if (this.$store.state.user.unlockType == 'keystore') {
                     const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
@@ -689,11 +497,18 @@
 
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                    let txData = nodeContract.methods.getConfirmationNode(address).call(function (err, result) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('res:');
-                      console.log(result);
+                    nodeContract.methods.getConfirmationNode(address).call((err, result) => {
+                      // console.log('error:');
+                      // console.log(err);
+                      // console.log('res:');
+                      // console.log(result);
+                      if (typeof result != 'undefined') {
+                          this.nodeConfirmation = result;
+                          // if (!this.nodeConfirmation) {
+                          //     this.$router.push({ path: `/registration/3` })
+                          // }
+                      }
+
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     if (typeof web3 !== 'undefined') {
@@ -703,73 +518,7 @@
 
                         localWeb3.eth.getAccounts().then(account => {
                            let address = account[0];
-                           const abi = [
-                                       {
-                            "constant": false,
-                            "inputs": [
-                                {
-                                    "name": "_hashType",
-                                    "type": "uint32"
-                                },
-                                {
-                                    "name": "_hash",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "_ip",
-                                    "type": "string"
-                                },
-                                {
-                                    "name": "_coordinates",
-                                    "type": "string"
-                                }
-                            ],
-                            "name": "addNode",
-                            "outputs": [],
-                            "payable": false,
-                            "stateMutability": "nonpayable",
-                            "type": "function"
-                           },
-                           {
-                                "constant": true,
-                                "inputs": [
-                                    {
-                                        "name": "_node",
-                                        "type": "address"
-                                    }
-                                ],
-                                "name": "getInfoNode",
-                                "outputs": [
-                                    {
-                                        "name": "",
-                                        "type": "uint32"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "bool"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "uint256"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "name": "",
-                                        "type": "string"
-                                    }
-                                ],
-                                "payable": false,
-                                "stateMutability": "view",
-                                "type": "function"
-                            },
-                           ];
+                           const abi = this.$store.state.contracts.ABI;
                            const contractAdr = this.$store.state.contracts.contractAddress;
 
                            let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
@@ -794,7 +543,8 @@
             // await this.sendEth();
             // await this.getDeposite();
             await this.getInfoNode();
-            await this.getConfirmationNode();
+            // await this.getConfirmationNode();
+            // await this.getDepositNode();
         },
     }
 </script>
@@ -917,6 +667,7 @@
             img
                 margin-right: 10px
     .btn-back
+        display: block
         font-family: Roboto
         font-size: 14px
         line-height: normal
