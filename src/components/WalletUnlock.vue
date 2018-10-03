@@ -126,10 +126,10 @@
     };
 
     const getEthAddress = async () => {
-      // const transport = await TransportU2F.create();
-      // const eth = new AppEth(transport);
-      // const result = await eth.getAddress("44'/60'/0'/0/0");
-      // return result.bitcoinAddress;
+      const transport = await TransportU2F.create();
+      const eth = new AppEth(transport);
+      const result = await eth.getAddress("44'/60'/0'/0/0");
+      return result;
     };
 
     export default {
@@ -200,7 +200,7 @@
             }
         },
         mounted: async function () {
-            getEthAddress().then(a => console.log(a));
+            // getEthAddress().then(a => console.log(a));
         },
     }
 </script>

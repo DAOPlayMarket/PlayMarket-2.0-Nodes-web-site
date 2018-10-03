@@ -59,7 +59,7 @@
                 <!--</p>-->
             <!--</span>-->
             <div class="form-input">
-                Координаты ноды
+                Node coordinates
                 <input type="text" v-model="coordinates">
             </div>
             <!--<span>-->
@@ -71,7 +71,7 @@
             <div class="settings-btn-wrapper" @click="addNode()">
             <button class="btn">
                 <img src="../assets/images/icon-config.png" alt="">
-                завершить настройку
+                Add node
             </button>
         </div>
             <router-link to="/registration/1" class="btn-back">
@@ -229,6 +229,7 @@
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                 let txData = nodeContract.methods.changeInfoNode(this.hash, this.hashType, this.ip, this.coordinates).encodeABI();
                 let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
+
                 let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
                     from: address,
                     to: contractAdr,

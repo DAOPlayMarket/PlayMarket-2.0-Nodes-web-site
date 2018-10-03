@@ -255,27 +255,27 @@ export default new Vuex.Store({
 		"name": "getInfoApp",
 		"outputs": [
 			{
-				"name": "",
+				"name": "hashType",
 				"type": "uint32"
 			},
 			{
-				"name": "",
+				"name": "appType",
 				"type": "uint32"
 			},
 			{
-				"name": "",
+				"name": "publish",
 				"type": "bool"
 			},
 			{
-				"name": "",
+				"name": "confirmation",
 				"type": "bool"
 			},
 			{
-				"name": "",
+				"name": "price",
 				"type": "uint256"
 			},
 			{
-				"name": "",
+				"name": "hash",
 				"type": "string"
 			}
 		],
@@ -425,7 +425,7 @@ export default new Vuex.Store({
 		"name": "getBuyObject",
 		"outputs": [
 			{
-				"name": "success",
+				"name": "",
 				"type": "bool"
 			}
 		],
@@ -444,15 +444,15 @@ export default new Vuex.Store({
 		"name": "getInfoAppICO",
 		"outputs": [
 			{
-				"name": "",
+				"name": "hashType",
 				"type": "uint32"
 			},
 			{
-				"name": "",
+				"name": "confirmation",
 				"type": "bool"
 			},
 			{
-				"name": "",
+				"name": "hash",
 				"type": "string"
 			}
 		],
@@ -838,27 +838,27 @@ export default new Vuex.Store({
 		"name": "getDepositNode",
 		"outputs": [
 			{
-				"name": "",
+				"name": "ETH",
 				"type": "uint256"
 			},
 			{
-				"name": "",
+				"name": "PMT",
 				"type": "uint256"
 			},
 			{
-				"name": "",
+				"name": "minETH",
 				"type": "uint256"
 			},
 			{
-				"name": "",
+				"name": "minPMT",
 				"type": "uint256"
 			},
 			{
-				"name": "",
+				"name": "refundTime",
 				"type": "uint256"
 			},
 			{
-				"name": "",
+				"name": "refundState",
 				"type": "bool"
 			}
 		],
@@ -1003,19 +1003,19 @@ export default new Vuex.Store({
 		"name": "getInfoDev",
 		"outputs": [
 			{
-				"name": "",
+				"name": "name",
 				"type": "bytes32"
 			},
 			{
-				"name": "",
+				"name": "desc",
 				"type": "bytes32"
 			},
 			{
-				"name": "",
+				"name": "state",
 				"type": "bool"
 			},
 			{
-				"name": "",
+				"name": "store",
 				"type": "uint32"
 			}
 		],
@@ -1134,7 +1134,7 @@ export default new Vuex.Store({
 		"name": "getTimeSubscription",
 		"outputs": [
 			{
-				"name": "_endTime",
+				"name": "",
 				"type": "uint256"
 			}
 		],
@@ -1226,27 +1226,27 @@ export default new Vuex.Store({
 		"name": "getInfoNode",
 		"outputs": [
 			{
-				"name": "",
+				"name": "hashType",
 				"type": "uint32"
 			},
 			{
-				"name": "",
+				"name": "collectState",
 				"type": "bool"
 			},
 			{
-				"name": "",
+				"name": "collectTime",
 				"type": "uint256"
 			},
 			{
-				"name": "",
+				"name": "hash",
 				"type": "string"
 			},
 			{
-				"name": "",
+				"name": "ip",
 				"type": "string"
 			},
 			{
-				"name": "",
+				"name": "coordinates",
 				"type": "string"
 			}
 		],
@@ -1385,10 +1385,10 @@ export default new Vuex.Store({
 ],
             tokenAddress: '0x123',
             nodeAddress: '0x123',
-            contractAddress: '0x0c8AD746d91a6e35C2F00F15EE5a5B00f86bC4ab',
+            contractAddress: '0x94f9657E2AF032b7413FBb9CEFC3f42313515B9e',
             contractPMT: '0x538106e553f5BA3298199C1998ba061922815A6c',
-            contractStorage: '0x6dE2D11b31FC9527Cf2B308B6263a011dC55738B',
-
+            contractStorage: '',
+            web3provider: 'wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'
         }
     },
     mutations: {
@@ -1405,6 +1405,9 @@ export default new Vuex.Store({
             if (state.user.unlockType == 'keystore') {
                 state.user.wallet = auth.wallet;
             }
+        },
+        SET_NODE_STORAGE (state, data) {
+            state.contracts.contractStorage = data.storage;
         },
         SET_IS_USER_UNAUTHENTICATED (state) {
             state.user.isUserAuthenticated = false;

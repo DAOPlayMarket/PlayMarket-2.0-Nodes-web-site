@@ -81,6 +81,26 @@
                     </button>
                 </div>
             </div>
+
+            <div v-if="depositStep == 3" class="info">
+                <p>
+                    Request refund
+                </p>
+                <div class="form-input">
+                    Value of ETH for refund
+                    <input type="text" v-model="ethRefund">
+                </div>
+                <div class="form-input">
+                    Value of PMT for refund
+                    <input type="text" v-model="pmtRefund">
+                </div>
+                <div class="pmt-btn-wrapper">
+                    <button class="btn" @click="requestRefund()">
+                        <img src="../assets/images/icon-pm.png" alt="">
+                        Request refund
+                    </button>
+                </div>
+            </div>
         </div>
             <div class="pmt-btn-wrapper">
                 <button class="btn" @click="TokenApprove()">
@@ -162,12 +182,15 @@
             return {
                 depositStep: 1,
                 nodeList: {},
+                nodeConfirmation: false,
                 ethVal: 1,
                 pmtVal: 5000,
                 pmtMin: 5000,
                 pmtApprove: 0,
                 pmtDeposit: 0,
+                pmtRefund: 0,
                 ethDeposit: 0,
+                ethRefund: 0,
             }
         },
         methods: {
@@ -236,7 +259,7 @@
                        },
                     ];
                     //add getter/setter
-                    let nodeStorage = '0x6dE2D11b31FC9527Cf2B308B6263a011dC55738B';
+                    let nodeStorage = this.$store.state.contracts.contractStorage;
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                     let txData = nodeContract.methods.approve(nodeStorage, this.pmtVal * 10000).encodeABI();
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
@@ -283,6 +306,7 @@
                 if (this.$store.state.user.unlockType == 'keystore') {
                     const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
                     const contractAdr = this.$store.state.contracts.contractPMT;
+                    const nodeStorage = this.$store.state.contracts.contractStorage;
                     const address = this.$store.state.user.address;
                     // PMT ABI
                     const abi = [
@@ -315,16 +339,19 @@
                            "type": "function"
                        },
                     ];
-
-                    let nodeStorage = this.$store.state.contracts.contractStorage;
+                    console.log(nodeStorage);
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                    nodeContract.methods.allowance(address, nodeStorage).call((err, result) => {
-                        this.pmtApprove = result;
+                    return nodeContract.methods.allowance(address, nodeStorage).call((err, result) => {
+                        if (err) {
+                            console.log(err);
+                        }
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
-
+                    return 0;
                 } else if (this.$store.state.user.unlockType == 'ledger') {
-
+                    return 0;
+                } else {
+                    return 0;
                 }
             },
             async sendPmt() {
@@ -333,20 +360,26 @@
                     // this.$router.push({ path: `/registration/3` })
                 }
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
                     const abi = this.$store.state.contracts.ABI;
 
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
                     let txData = nodeContract.methods.makeDeposit(address, 50000000).encodeABI();
-
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                    let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
+                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                        from: address,
+                        to: contractAdr,
+                        data: txData,
+                        value: web3Utils.toHex(web3Utils.toWei(String(this.ethVal)))
+                    }) + 100000);
+
                     let txParams = {
                         nonce: web3Utils.toHex(nonce),
-                        gasPrice: web3Utils.toHex(100000000),
-                        gasLimit: web3Utils.toHex(250000),
+                        gasPrice: gasPrice,
+                        gasLimit: gasLimit,
                         value: web3Utils.toHex(web3Utils.toWei(String(this.ethVal))),
                         to: contractAdr,
                         data: txData,
@@ -374,6 +407,46 @@
 
                 }
             },
+            async sendETH() {
+              const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                    const contractAdr = this.$store.state.contracts.contractAddress;
+                    const address = this.$store.state.user.address;
+                    const abi = this.$store.state.contracts.ABI;
+
+                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                    let txData = nodeContract.methods.makeDepositETH(address).encodeABI();
+                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                    let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
+                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                        from: address,
+                        to: contractAdr,
+                        data: txData,
+                        value: web3Utils.toHex(String(web3Utils.toWei(String(9))))
+                    }) + 100000);
+
+                    let txParams = {
+                        nonce: web3Utils.toHex(nonce),
+                        gasPrice: gasPrice,
+                        gasLimit: gasLimit,
+                        value: web3Utils.toHex(String(web3Utils.toWei(String(9)))),
+                        to: contractAdr,
+                        data: txData,
+                        chainId: 4
+                    };
+
+                    let tx = new ethTx(txParams);
+                    tx.sign(this.$store.state.user.wallet._privKey);
+                    let serializedTx = tx.serialize();
+
+                    let raw = "0x" + serializedTx.toString("hex");
+
+                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('TX:');
+                      console.log(transactionHash);
+                    });
+            },
             async getDepositNode() {
                 const abi = this.$store.state.contracts.ABI;
 
@@ -386,9 +459,10 @@
                 nodeContract.methods.getDepositNode(address).call((err, result) => {
                     // console.log('error:');
                     // console.log(err);
-                    // console.log('res:');
-                    // console.log(result);
+                    console.log('res:');
+                    console.log(result);
                     this.ethDeposit = result[0];
+                    this.pmtDeposit = result[1];
                     this.pmtDeposit = result[1];
                 });
             },
@@ -401,13 +475,19 @@
 
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                    let txData = nodeContract.methods.requestRefund("1000000000000000000", 50000000).encodeABI();
+                    let txData = nodeContract.methods.requestRefund(web3Utils.toWei(String(this.ethRefund)), String(this.pmtRefund*10000)).encodeABI();
+                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice())*2);
+                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                        from: address,
+                        to: contractAdr,
+                        data: txData,
+                    }));
 
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                     let txParams = {
                         nonce: web3Utils.toHex(nonce),
-                        gasPrice: web3Utils.toHex(100000000),
-                        gasLimit: web3Utils.toHex(250000),
+                        gasPrice: gasPrice,
+                        gasLimit: gasLimit,
                         value: '0x00',
                         to: contractAdr,
                         data: txData,
@@ -439,12 +519,18 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                     let txData = nodeContract.methods.refund().encodeABI();
-
+                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
+                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                        from: address,
+                        to: contractAdr,
+                        data: txData,
+                        value: '0x00'
+                    }));
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                     let txParams = {
                         nonce: web3Utils.toHex(nonce),
-                        gasPrice: web3Utils.toHex(100000000),
-                        gasLimit: web3Utils.toHex(250000),
+                        gasPrice: gasPrice,
+                        gasLimit: gasLimit,
                         value: '0x00',
                         to: contractAdr,
                         data: txData,
@@ -475,24 +561,90 @@
 
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                let txData = nodeContract.methods.NodeStorage().call((err, result) => {
-                    console.log('error:');
-                    console.log(err);
-                    console.log('res:');
-                    console.log(result);
+                return nodeContract.methods.NodeStorage().call((err, result) => {
+                    if (err) {
+                        console.log('error:');
+                        console.log(err);
+                    } else {
+                        this.$store.commit('SET_NODE_STORAGE',
+                            {
+                                storage: result,
+                            }
+                        );
+                    }
                 });
+            },
+            async getConfirmationNode() {
+                const abi = this.$store.state.contracts.ABI;
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const contractAdr = this.$store.state.contracts.contractAddress;
+                    const address = this.$store.state.user.address;
+
+                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                    return nodeContract.methods.getConfirmationNode(address).call((err, result) => {
+                      if (typeof result != 'undefined') {
+                          this.nodeConfirmation = result;
+                      }
+
+                    });
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    if (typeof web3 !== 'undefined') {
+                       //check that metaMask is installed
+
+                        const localWeb3 = new Web3(window.web3.currentProvider);
+
+                        localWeb3.eth.getAccounts().then(account => {
+                           let address = account[0];
+                           const abi = this.$store.state.contracts.ABI;
+                           const contractAdr = this.$store.state.contracts.contractAddress;
+
+                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
+
+                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
+                              console.log('error:');
+                              console.log(err);
+                              console.log('res:');
+                              console.log(result);
+                            });
+                        });
+
+                    } else{
+                       console.log('MetaMask is not installed')
+                    }
+                }
             }
         },
         mounted: async function () {
             this.nodeList = await this.getNodeList();
             // let balance = await this.getBalance(this.$store.state.user.address);
-            // this.getNodeStorage();
+            await this.getNodeStorage();
+
             // this.getDepositNode();
-            await this.tokenAllowance();
+            this.pmtApprove = await this.tokenAllowance();
+            this.nodeConfirmation = await this.getConfirmationNode();
+
+            // console.log('approve:')
+            // console.log(this.pmtApprove)
+            //
+            console.log('confirmation:');
+            console.log(this.nodeConfirmation);
+
+            // await this.requestRefund();
             await this.getDepositNode();
-            if (this.pmtApprove < this.pmtMin && this.pmtDeposit < this.pmtMin) {
+            // console.log(this.pmtDeposit);
+            // console.log(this.pmtMin);
+
+            if (parseFloat(this.pmtApprove) < parseFloat(this.pmtMin) * 10000 && parseFloat(this.pmtDeposit) < parseFloat(this.pmtMin) * 10000) {
+                this.depositStep = 1;
+            } else {
                 this.depositStep = 2;
             }
+            // this.sendETH();
+            // this.depositStep = 3;
+
         },
     }
 </script>
