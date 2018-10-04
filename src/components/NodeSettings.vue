@@ -30,6 +30,12 @@
                 <p>Node validation</p>
             </li>
         </ul>
+        <div v-if="tx != ''" class="transaction">
+            Transaction successfully sent. Transaction hash:
+            <a class="txHash" :href="$store.state.etherscan + '/tx/' + tx" target="_blank">
+                {{ tx }}
+            </a>
+        </div>
         <div v-if="!regStatus" class="info">
             <p>
                 Настройка ноды включает в себя отправку эфира(deposit), hash, hashTag, IP, и координат ноды.
@@ -129,6 +135,7 @@
         name: "node-settings",
         data() {
             return {
+                tx: '',
                 regStatus: false,
                 nodeConfirmation: false,
                 hashType: 1,
@@ -139,15 +146,6 @@
             }
         },
         methods: {
-            async updateNodeSettings() {
-
-            },
-            async saveNodeSettings(address) {
-                // var web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/QLdzys0ezvUkTnMfUYpV"));
-                if (this.$store.state.unlockType == 'metamask') {
-
-                }
-            },
             async addNode() {
                 //validate data
                 //send transaction
@@ -212,6 +210,7 @@
                 // this.$router.push({ path: `/registration/3` })
             },
             async changeInfoNode() {
+                this.$store.commit('SHOW_SPINNER');
                 let localweb3 = {};
                 if (this.$store.state.user.unlockType == 'keystore') {
                     localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
@@ -255,11 +254,15 @@
 
                     let raw = "0x" + serializedTx.toString("hex");
 
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                    localweb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {
+                      // console.log('error:');
+                      // console.log(err);
+                      // console.log('TX:');
+                      // console.log(transactionHash);
+                        if (transactionHash) {
+                            this.tx = transactionHash;
+                        }
+                        this.$store.commit('HIDE_SPINNER');
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
@@ -271,9 +274,6 @@
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
                 }
-            },
-            async getDeposite() {
-
             },
             async getDepositNode() {
                 const abi = this.$store.state.contracts.ABI;
@@ -449,7 +449,7 @@
                     const abi = this.$store.state.contracts.ABI;
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                    nodeContract.methods.getInfoNode(address).call((err, result) => {
+                    return nodeContract.methods.getInfoNode(address).call((err, result) => {
                         this.regStatus = typeof result != 'undefined';
                         if (this.regStatus) {
                             this.hashType = result[0];
@@ -539,13 +539,9 @@
             }
         },
         mounted: async function () {
-            // await this.sendMetamaskTx();
-            // await this.sendKeystoreTx();
-            // await this.sendEth();
-            // await this.getDeposite();
-            await this.getInfoNode();
-            // await this.getConfirmationNode();
-            // await this.getDepositNode();
+            this.$store.commit('SHOW_SPINNER');
+            let nodeInfo = await this.getInfoNode();
+            this.$store.commit('HIDE_SPINNER');
         },
     }
 </script>

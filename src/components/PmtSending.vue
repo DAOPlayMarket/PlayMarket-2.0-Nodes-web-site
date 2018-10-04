@@ -1,7 +1,7 @@
 <template>
     <div id="pmtSend">
         <div class="header">
-            Регистрация ноды
+            Node registration
         </div>
         <p>Step 3 of 4: Node registration</p>
         <ul class="steps">
@@ -9,163 +9,185 @@
                 <span>
                     <img src="../assets/images/icon-load.png" alt="">
                 </span>
-                <p>Загрузка ключа</p>
+                <p>Wallet unlock</p>
             </li>
             <li class="selected">
                 <span>
                     <img src="../assets/images/icon-pm.png" alt="">
                 </span>
-                <p>Отправка PMT</p>
+                <p>Node settings</p>
             </li>
             <li class="selected">
                 <span>
                     <img src="../assets/images/icon-config.png" alt="">
                 </span>
-                <p>Настройка ноды</p>
+                <p>ETH/PMT operation</p>
             </li>
             <li>
                 <span>
                     <img src="../assets/images/icon-done.png" alt="">
                 </span>
-                <p>Валидация ноды</p>
+                <p>Node validation</p>
             </li>
         </ul>
-        <div v-if="Object.keys(nodeList).length == 0">
-            <div class="info">
-            <p>
-                Стоимость регистрации ноды 2000 PMT, кроме того необходимо внести депозит в 10 ETH для чегототам.
-            </p>
-            <p>
-                Чтобы продолжить удостоверьтесь, что на вашем кошельке ETH достаточно токенов PMT для регистрации ноды.
-            </p>
-            <!--<span>-->
-                <!--From:-->
-                <!--<p class="values">-->
-                    <!--{{ $store.state.user.address }}-->
-                <!--</p>-->
-            <!--</span>-->
-            <!--<span>-->
-                <!--To:-->
-                <!--<p class="values">-->
-                    <!--0xb9641870af8bc16c745706df75ee7f4a4433f2b1-->
-                <!--</p>-->
-            <!--</span>-->
-            <div v-if="depositStep == 1" class="info">
-                <p>
-                    Deposite making
-                </p>
-                <div class="form-input">
-                    Value of PMT to Approve
-                    <input type="text" v-model="pmtVal">
-                </div>
-                <div class="pmt-btn-wrapper">
-                    <button class="btn" @click="TokenApprove()">
-                        <img src="../assets/images/icon-pm.png" alt="">
-                        Перевести PMT
-                    </button>
+        <div>
+            <div v-if="!nodeConfirmation" class="deposit">
+                <div class="info">
+                    <p>
+                        Стоимость регистрации ноды 2000 PMT, кроме того необходимо внести депозит в 10 ETH для чегототам.
+                    </p>
+                    <p>
+                        Чтобы продолжить удостоверьтесь, что на вашем кошельке ETH достаточно токенов PMT для регистрации ноды.
+                    </p>
+
+                    <div v-if="depositStep == 1" class="info">
+                        <p>
+                            Deposite making
+                        </p>
+                        <div class="form-input">
+                            Value of PMT to Approve
+                            <input type="text" v-model="pmtVal">
+                        </div>
+                        <div class="pmt-btn-wrapper">
+                            <button class="btn" @click="TokenApprove()">
+                                <img src="../assets/images/icon-pm.png" alt="">
+                                Перевести PMT
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="depositStep == 2" class="info">
+                        <p>
+                            Deposit making
+                        </p>
+                        <div class="form-input">
+                            Value of ETH for deposit
+                            <input type="text" v-model="ethVal">
+                        </div>
+                        <div class="pmt-btn-wrapper">
+                            <button class="btn" @click="sendPmt()">
+                                <img src="../assets/images/icon-pm.png" alt="">
+                                Внести депозит
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div v-if="depositStep == 2" class="info">
-                <p>
-                    Deposit making
-                </p>
-                <div class="form-input">
-                    Value of ETH for deposit
-                    <input type="text" v-model="ethVal">
-                </div>
-                <div class="pmt-btn-wrapper">
-                    <button class="btn" @click="sendPmt()">
-                        <img src="../assets/images/icon-pm.png" alt="">
-                        Внести депозит
-                    </button>
-                </div>
-            </div>
-
-            <div v-if="depositStep == 3" class="info">
-                <p>
-                    Request refund
-                </p>
-                <div class="form-input">
-                    Value of ETH for refund
-                    <input type="text" v-model="ethRefund">
-                </div>
-                <div class="form-input">
-                    Value of PMT for refund
-                    <input type="text" v-model="pmtRefund">
-                </div>
-                <div class="pmt-btn-wrapper">
-                    <button class="btn" @click="requestRefund()">
-                        <img src="../assets/images/icon-pm.png" alt="">
+            <div class="refund">
+                <div v-if="" class="info">
+                    <p>
                         Request refund
-                    </button>
-                </div>
-            </div>
-        </div>
-            <div class="pmt-btn-wrapper">
-                <button class="btn" @click="TokenApprove()">
-                    <img src="../assets/images/icon-pm.png" alt="">
-                    Перевести PMT
-                </button>
-
-                <button class="btn" @click="sendPmt()">
-                    <img src="../assets/images/icon-pm.png" alt="">
-                    Внести депозит
-                </button>
-
-                <button class="btn" @click="requestRefund()">
-                    <img src="../assets/images/icon-pm.png" alt="">
-                    Запросить возврат
-                </button>
-
-                <button class="btn" @click="refund()">
-                    <img src="../assets/images/icon-pm.png" alt="">
-                    Refund
-                </button>
-            </div>
-        </div>
-        <div v-if="Object.keys(nodeList).length !== 0" class="node-operation">
-            <p>У вас уже есть ноды, вы можете совершить с ними некоторые действия.</p>
-            <div class="node-item">
-                <div class="header">
-                    <div class="caption">
-                        Нода #1
+                    </p>
+                    <div class="form-input">
+                        Value of ETH for refund
+                        <input type="text" v-model="ethRefund">
                     </div>
-                    <div class="status" style="align-self: flex-end">
-                        Активная нода (истекает 29.09.2022)
+                    <div class="form-input">
+                        Value of PMT for refund
+                        <input type="text" v-model="pmtRefund">
                     </div>
-                </div>
-                <div class="content">
-                    <div class="info-item">
-                        <div class="text">
-                            Загрузка ноды
-                        </div>
-                        <div class="information">
-                            21%
-                        </div>
+                    <div class="pmt-btn-wrapper">
+                        <button class="btn" @click="requestRefund()">
+                            <img src="../assets/images/icon-pm.png" alt="">
+                            Request refund
+                        </button>
+                        <button v-if="refundStatus" class="btn" @click="refund()">
+                            <img src="../assets/images/icon-pm.png" alt="">
+                            Refund
+                        </button>
                     </div>
-                    <div class="values">
-                        <div class="info-item" style="padding-right: 15px">
-                            <div class="text">
-                                Оборот ETH
-                            </div>
-                            <div class="information">
-                                22 174
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="text">
-                                Скачиваний в месяц
-                            </div>
-                            <div class="information">
-                                55 232 150
-                            </div>
-                        </div>
+                    <div>
+                        You can collect your refund after {{ refundTimer }}
                     </div>
                 </div>
             </div>
+            <div v-if="!nodeConfirmation" class="collect">
+                <p>
+                    Collect your amount
+                </p>
+                <div v-if="!collectStatus">
+                    <div class="pmt-btn-wrapper">
+                        <button class="btn" @click="requestCollectNode()">
+                            <img src="../assets/images/icon-pm.png" alt="">
+                            Request collect
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="collectStatus">
+                    You can collect your amount after {{ collectTimer }}
+                    <div class="pmt-btn-wrapper">
+                        <button class="btn" @click="collectNode()">
+                            <img src="../assets/images/icon-pm.png" alt="">
+                            Collect
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <!--<div class="pmt-btn-wrapper">-->
+            <!--<button class="btn" @click="TokenApprove()">-->
+                <!--<img src="../assets/images/icon-pm.png" alt="">-->
+                <!--Перевести PMT-->
+            <!--</button>-->
+
+            <!--<button class="btn" @click="sendPmt()">-->
+                <!--<img src="../assets/images/icon-pm.png" alt="">-->
+                <!--Внести депозит-->
+            <!--</button>-->
+
+            <!--<button class="btn" @click="requestRefund()">-->
+                <!--<img src="../assets/images/icon-pm.png" alt="">-->
+                <!--Запросить возврат-->
+            <!--</button>-->
+
+            <!--<button class="btn" @click="refund()">-->
+                <!--<img src="../assets/images/icon-pm.png" alt="">-->
+                <!--Refund-->
+            <!--</button>-->
+        <!--</div>-->
         </div>
-        <router-link to="/registration/1" class="btn-back">
+        <!--<div class="node-operation">-->
+            <!--<p>Node options</p>-->
+            <!--<div class="node-item">-->
+                <!--<div class="header">-->
+                    <!--<div class="caption">-->
+                        <!--{{ nodeAddress }}-->
+                    <!--</div>-->
+                    <!--<div class="status" style="align-self: flex-end">-->
+                        <!--Node status: {{ nodeConfirmation ? 'Confirm' : 'Not Confirm' }}-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="content">-->
+                    <!--<div class="info-item">-->
+                        <!--<div class="text">-->
+                            <!--Загрузка ноды-->
+                        <!--</div>-->
+                        <!--<div class="information">-->
+                            <!--21%-->
+                        <!--</div>-->
+                    <!--</div>-->
+                    <!--<div class="values">-->
+                        <!--<div class="info-item" style="padding-right: 15px">-->
+                            <!--<div class="text">-->
+                                <!--ETH deposit-->
+                            <!--</div>-->
+                            <!--<div class="information">-->
+                                <!--{{ pmtDeposit }}-->
+                            <!--</div>-->
+                        <!--</div>-->
+                        <!--<div class="info-item">-->
+                            <!--<div class="text">-->
+                                <!--PMT deposit-->
+                            <!--</div>-->
+                            <!--<div class="information">-->
+                                <!--{{ ethDeposit }}-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <router-link to="/registration/2" class="btn-back">
             Вернуться на предыдущий шаг
         </router-link >
     </div>
@@ -180,9 +202,15 @@
         name: "pmt-sending",
         data() {
             return {
+                nodeAddress: '',
                 depositStep: 1,
-                nodeList: {},
                 nodeConfirmation: false,
+                refundStatus: false,
+                refundTimestamp: 0,
+                collectStatus: false,
+                collectTimestamp: 0,
+                refundTimer: '',
+                collectTimer: '',
                 ethVal: 1,
                 pmtVal: 5000,
                 pmtMin: 5000,
@@ -194,10 +222,6 @@
             }
         },
         methods: {
-            async getNodeList() {
-                return {}
-                // return {test: 1}
-            },
             async getBalance(address) {
                 let balance = '';
                 if (this.$store.state.user.unlockType == 'metamask') {
@@ -456,14 +480,13 @@
 
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                nodeContract.methods.getDepositNode(address).call((err, result) => {
+                return nodeContract.methods.getDepositNode(address).call((err, result) => {
                     // console.log('error:');
                     // console.log(err);
                     console.log('res:');
                     console.log(result);
-                    this.ethDeposit = result[0];
-                    this.pmtDeposit = result[1];
-                    this.pmtDeposit = result[1];
+                    this.ethDeposit = web3Utils.fromWei(result[0], 'ether');
+                    this.pmtDeposit = result[1] / 10000;
                 });
             },
             async requestRefund() {
@@ -476,10 +499,11 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                     let txData = nodeContract.methods.requestRefund(web3Utils.toWei(String(this.ethRefund)), String(this.pmtRefund*10000)).encodeABI();
-                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice())*2);
+                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
                     let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
+                        value: '0x00',
                         data: txData,
                     }));
 
@@ -552,6 +576,91 @@
                     });
                 }
             },
+            async requestCollectNode() {
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const contractAdr = this.$store.state.contracts.contractAddress;
+                    const address = this.$store.state.user.address;
+                    const abi = this.$store.state.contracts.ABI;
+
+                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                    let txData = nodeContract.methods.requestCollectNode().encodeABI();
+                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
+                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                        from: address,
+                        to: contractAdr,
+                        value: '0x00',
+                        data: txData,
+                    }));
+
+                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                    let txParams = {
+                        nonce: web3Utils.toHex(nonce),
+                        gasPrice: gasPrice,
+                        gasLimit: gasLimit,
+                        value: '0x00',
+                        to: contractAdr,
+                        data: txData,
+                        chainId: 4
+                    };
+
+                    let tx = new ethTx(txParams);
+                    tx.sign(this.$store.state.user.wallet._privKey);
+                    let serializedTx = tx.serialize();
+
+                    let raw = "0x" + serializedTx.toString("hex");
+
+                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('TX:');
+                      console.log(transactionHash);
+                    });
+                }
+            },
+            async collectNode() {
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const contractAdr = this.$store.state.contracts.contractAddress;
+                    const address = this.$store.state.user.address;
+                    const abi = this.$store.state.contracts.ABI;
+
+                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                    let txData = nodeContract.methods.collectNode().encodeABI();
+                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
+                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                        from: address,
+                        to: contractAdr,
+                        data: txData,
+                        value: '0x00'
+                    }));
+                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                    let txParams = {
+                        nonce: web3Utils.toHex(nonce),
+                        gasPrice: gasPrice,
+                        gasLimit: gasLimit,
+                        value: '0x00',
+                        to: contractAdr,
+                        data: txData,
+                        chainId: 4
+                    };
+
+                    let tx = new ethTx(txParams);
+                    tx.sign(this.$store.state.user.wallet._privKey);
+                    let serializedTx = tx.serialize();
+
+                    let raw = "0x" + serializedTx.toString("hex");
+
+                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
+                      console.log('error:');
+                      console.log(err);
+                      console.log('TX:');
+                      console.log(transactionHash);
+                    });
+                }
+            },
             async getNodeStorage() {
                 const abi = this.$store.state.contracts.ABI;
 
@@ -573,6 +682,43 @@
                         );
                     }
                 });
+            },
+            async getInfoNode() {
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const contractAdr = this.$store.state.contracts.contractAddress;
+                    const address = this.$store.state.user.address;
+                    const abi = this.$store.state.contracts.ABI;
+                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                    return nodeContract.methods.getInfoNode(address).call((err, result) => {
+                        console.log(result)
+                    });
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    if (typeof web3 !== 'undefined') {
+                       //check that metaMask is installed
+
+                        const localWeb3 = new Web3(window.web3.currentProvider);
+
+                        localWeb3.eth.getAccounts().then(account => {
+                           let address = account[0];
+                           const abi = this.$store.state.contracts.ABI;
+                           const contractAdr = this.$store.state.contracts.contractAddress;
+
+                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
+
+                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
+                              console.log('error:');
+                              console.log(err);
+                              console.log('res:');
+                              console.log(result);
+                            });
+                        });
+
+                    } else{
+                       console.log('MetaMask is not installed')
+                    }
+                }
             },
             async getConfirmationNode() {
                 const abi = this.$store.state.contracts.ABI;
@@ -617,34 +763,53 @@
                 }
             }
         },
+        watch: {
+            refundTimestamp: function() {
+                const date = new Date(this.refundTimestamp*1000);
+                let hours = date.getHours();
+                let minutes = "0" + date.getMinutes();
+                let seconds = "0" + date.getSeconds();
+                let formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+                this.refundTimer = formattedTime;
+            },
+            collectTimestamp: function() {
+                const date = new Date(this.collectTimestamp*1000);
+                let hours = date.getHours();
+                let minutes = "0" + date.getMinutes();
+                let seconds = "0" + date.getSeconds();
+                let formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+                this.collectTimer = formattedTime;
+            },
+        },
         mounted: async function () {
-            this.nodeList = await this.getNodeList();
+            this.$store.commit('SHOW_SPINNER');
+
             // let balance = await this.getBalance(this.$store.state.user.address);
             await this.getNodeStorage();
+            let nodeInfo = await this.getInfoNode();
+            this.collectStatus = nodeInfo[1];
+            this.collectTimestamp = nodeInfo[0];
 
             // this.getDepositNode();
             this.pmtApprove = await this.tokenAllowance();
             this.nodeConfirmation = await this.getConfirmationNode();
 
-            // console.log('approve:')
-            // console.log(this.pmtApprove)
-            //
-            console.log('confirmation:');
-            console.log(this.nodeConfirmation);
-
             // await this.requestRefund();
-            await this.getDepositNode();
-            // console.log(this.pmtDeposit);
-            // console.log(this.pmtMin);
+            let depo = await this.getDepositNode();
 
-            if (parseFloat(this.pmtApprove) < parseFloat(this.pmtMin) * 10000 && parseFloat(this.pmtDeposit) < parseFloat(this.pmtMin) * 10000) {
+            this.ethDeposit = web3Utils.fromWei(depo[0], 'ether');
+            this.pmtDeposit = depo[1] / 10000;
+            this.refundStatus = depo[5];
+            this.refundTimestamp = depo[4];
+
+            if (this.pmtApprove < this.pmtMin && this.pmtDeposit < this.pmtMin && this.pmtDeposit + this.pmtApprove < this.pmtMin) {
                 this.depositStep = 1;
             } else {
                 this.depositStep = 2;
             }
             // this.sendETH();
             // this.depositStep = 3;
-
+            this.$store.commit('HIDE_SPINNER');
         },
     }
 </script>

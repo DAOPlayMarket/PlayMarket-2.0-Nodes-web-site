@@ -2,6 +2,7 @@
     <div id="wrapper">
         <Header></Header>
         <div id="content">
+            <Spinner></Spinner>
             <router-view :key="$route.fullPath"></router-view>
         </div>
     </div>
@@ -9,11 +10,13 @@
 
 <script>
 import Header from '@/components/Header.vue'
+import Spinner from '@/components/Spinner.vue'
 
 export default {
   name: 'App',
   components: {
     Header,
+    Spinner
   }
 }
 </script>

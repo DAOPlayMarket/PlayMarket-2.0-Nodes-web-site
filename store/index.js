@@ -1389,7 +1389,8 @@ export default new Vuex.Store({
             contractPMT: '0x538106e553f5BA3298199C1998ba061922815A6c',
             contractStorage: '',
             web3provider: 'wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'
-        }
+        },
+		etherscan: 'https://rinkeby.etherscan.io/'
     },
     mutations: {
         UPDATE_SEARCH_KEY(state, searchKey) {
@@ -1414,16 +1415,16 @@ export default new Vuex.Store({
             state.user.address = '';
         },
         SHOW_SPINNER(state) {
-            state.showStat = true
-        },
-        HIDE_SPINNER(state) {
-            state.showStat = false
-        },
-        SHOW_STATISTIC(state) {
             state.showSpinner = true
         },
+        HIDE_SPINNER(state) {
+			state.showSpinner = false
+        },
+        SHOW_STATISTIC(state) {
+        	state.showStat = true
+        },
         HIDE_STATISTIC(state) {
-            state.showSpinner = false
+            state.showStat = false
         },
     },
     actions: {}
