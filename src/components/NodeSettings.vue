@@ -1,7 +1,7 @@
 <template>
     <div id="settings">
         <div class="header">
-            Регистрация ноды
+            Node registration
         </div>
         <p>Step 2 of 4: Node registration</p>
         <ul class="steps">
@@ -31,14 +31,14 @@
             </li>
         </ul>
         <div v-if="tx != ''" class="transaction">
-            Transaction successfully sent. Transaction hash:
+            <p>Transaction successfully sent. Transaction hash:</p>
             <a class="txHash" :href="$store.state.etherscan + '/tx/' + tx" target="_blank">
                 {{ tx }}
             </a>
         </div>
         <div v-if="!regStatus" class="info">
             <p>
-                Настройка ноды включает в себя отправку эфира(deposit), hash, hashTag, IP, и координат ноды.
+                Configuring the node includes sending ETH(deposit), IPFS hash, hashTag, IP and coordinates of the node.
             </p>
             <div class="form-input">
                 IP
@@ -81,7 +81,7 @@
             </button>
         </div>
             <router-link to="/registration/1" class="btn-back">
-                Вернуться на предыдущий шаг
+                Return to the previous step
             </router-link >
         </div>
         <div v-if="regStatus" class="info">
@@ -102,7 +102,7 @@
             </div>
 
             <div class="form-input">
-                Координаты ноды
+                Node coordinates
                 <input type="text" v-model="coordinates">
             </div>
             <div class="settings-btn-wrapper" @click="changeInfoNode()">
@@ -118,7 +118,7 @@
                 </button>
             </div>
             <router-link to="/registration/1" class="btn-back">
-                Вернуться на предыдущий шаг
+                Return to the previous step
             </router-link >
 
         </div>
@@ -191,17 +191,11 @@
                     let raw = "0x" + serializedTx.toString("hex");
 
                     localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                      this.tx = transactionHash;
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                      this.tx = transactionHash;
                     });
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
@@ -265,10 +259,7 @@
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                      this.tx = transactionHash;
                     });
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
@@ -396,6 +387,11 @@
         letter-spacing: 0.2px
         text-align: left
         color: #67777b
+    .transaction
+        padding-top: 10px
+        padding-bottom: 10px
+        p
+            font-weight: 600
     .steps
         position: relative
         display: flex

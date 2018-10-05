@@ -1,34 +1,43 @@
 <template>
     <div v-if="!$store.state.showSpinner" id="about">
         <div class="info_page">
-            <h2>Что такое ноды, мастерноды и как на этом заработать</h2>
-            <p>Что такое Ноды и Мастер Ноды?
-                Когда вы устанавливаете себе на компьютер кошелек, сначала он синхронизируется со всей сетью блокчейн (вся информация с большого количества блоков начинает подгружаться к вам на кошелек). Пока синхронизация не дошла до конца, все предыдущие блоки не погрузились, ваш кошелек считается обычной нодой.
-                Ноды – кошелек который не полностью синхронизирован (более 100 Гб) с блокчейн сетью.
+            <h2>What is a DAO PlayMarket 2.0 node?</h2>
+            <p>
+                The node provides an API (application programming interface) for running mobile apps and/or platform sites.
             </p>
             <p>
-                Полные Ноды (они же полные узлы сети) – полностью синхронизированные с блокчейн кошельки, которые подключены к сети 24/7. Их функция хранить всю информацию об сети и проверять соответствуют ли правилам сети новые транзакции, подтверждая или отвергая их при попытке включить транзакцию в новый блок майнерами.
+                Each node has a full node of Ethereum blockchain. When the node is running, the information from smart contracts is constantly synchronized with a NoSQL DBMS (MongoDB).
             </p>
-            <div class="info-box">
-                <div class="info-stat">
-                    <div class="info-stat__header">Активных нод</div>
-                    <div class="info-stat__info">9 323</div>
-                </div>
-                <div class="info-stat">
-                    <div class="info-stat__header">Оборот ETH</div>
-                    <div class="info-stat__info">100k</div>
-                </div>
-                <div class="info-stat">
-                    <div class="info-stat__header">Доступно приложений</div>
-                    <div class="info-stat__info">98k</div>
-                </div>
-            </div>
+            <p>
+                This is necessary to speed up the performance of the node whose API is implemented on Node.js. Node.js allows you to create cross-platform, high-end services.
+            </p>
+            <p>
+                The task of the node at the initial stage is to get information about frequently used apps from the file storage and cache them.
+            </p>
+            <p>
+                Upon request, it transfers them to the mobile app, loads and caches information about new applications.
+            </p>
+
+            <!--<div class="info-box">-->
+                <!--<div class="info-stat">-->
+                    <!--<div class="info-stat__header">Активных нод</div>-->
+                    <!--<div class="info-stat__info">9 323</div>-->
+                <!--</div>-->
+                <!--<div class="info-stat">-->
+                    <!--<div class="info-stat__header">Оборот ETH</div>-->
+                    <!--<div class="info-stat__info">100k</div>-->
+                <!--</div>-->
+                <!--<div class="info-stat">-->
+                    <!--<div class="info-stat__header">Доступно приложений</div>-->
+                    <!--<div class="info-stat__info">98k</div>-->
+                <!--</div>-->
+            <!--</div>-->
             <router-link to="/registration/1" class="btn btn-reg">
-                Я все понял, хочу создать ноду
+                Registrate node
             </router-link >
-            <div @click="$store.commit('SHOW_STATISTIC')" class="btn btn-stat">
-                Посмотреть подробную статистику
-            </div>
+            <!--<div @click="$store.commit('SHOW_STATISTIC')" class="btn btn-stat">-->
+                <!--Посмотреть подробную статистику-->
+            <!--</div>-->
         </div>
     </div>
 </template>
@@ -57,7 +66,8 @@
         .info_page
             max-width: 560px
             height: auto
-            min-height: 70vh
+            /*min-height: 70vh*/
+            min-height: 50vh
             margin-top: 70px
             display: flex
             flex-direction: column

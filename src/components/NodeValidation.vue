@@ -48,7 +48,7 @@
             </button>
         </div>
         <router-link to="/registration/3" class="btn-back">
-            Вернуться на предыдущий шаг
+            Return to the previous step
         </router-link >
     </div>
 </template>

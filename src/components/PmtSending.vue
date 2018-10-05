@@ -30,6 +30,12 @@
                 <p>Node validation</p>
             </li>
         </ul>
+        <div v-if="tx != ''" class="transaction">
+            <p>Transaction successfully sent. Transaction hash:</p>
+            <a class="txHash" :href="$store.state.etherscan + '/tx/' + tx" target="_blank">
+                {{ tx }}
+            </a>
+        </div>
         <div>
             <div v-if="!nodeConfirmation" class="deposit">
                 <div class="info">
@@ -45,10 +51,10 @@
                             Value of PMT to Approve
                             <input type="text" v-model="pmtVal">
                         </div>
-                        <div class="pmt-btn-wrapper">
+                        <div class="pmt-btn-wrapper" style="margin: 20px 0 20px 0;">
                             <button class="btn" @click="TokenApprove()">
                                 <img src="../assets/images/icon-pm.png" alt="">
-                                Перевести PMT
+                                Approve PMT
                             </button>
                         </div>
                     </div>
@@ -64,7 +70,7 @@
                         <div class="pmt-btn-wrapper">
                             <button class="btn" @click="sendPmt()">
                                 <img src="../assets/images/icon-pm.png" alt="">
-                                Внести депозит
+                                Make deposit
                             </button>
                         </div>
                     </div>
@@ -124,7 +130,7 @@
             </div>
         </div>
         <router-link to="/registration/2" class="btn-back">
-            Вернуться на предыдущий шаг
+            Return to the previous step
         </router-link >
     </div>
 </template>
@@ -158,6 +164,7 @@
                 ethRefund: 0,
                 refundCollapsed: true,
                 depositCollapsed: true,
+                tx: ''
             }
         },
         methods: {
@@ -230,10 +237,7 @@
                     let raw = "0x" + serializedTx.toString("hex");
 
                     localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                      this.tx = transactionHash;
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     // web3.eth.sendTransaction(transaction, (error, result) => {
@@ -308,7 +312,7 @@
                     const abi = this.$store.state.contracts.ABI;
 
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                    let txData = nodeContract.methods.makeDeposit(address, 50000000).encodeABI();
+                    let txData = nodeContract.methods.makeDeposit(address, this.pmtApprove).encodeABI();
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                     let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
                     let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
@@ -334,13 +338,16 @@
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
-
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
-                    });
+                    try {
+                        let transactionHash = await localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {});
+                        this.tx = transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                      // console.log('error:');
+                      // console.log(err);
+                      // console.log('TX:');
+                      // console.log(transactionHash);
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     // web3.eth.sendTransaction(transaction, (error, result) => {
                     //
@@ -399,27 +406,17 @@
 
                 try {
                     let result = await nodeContract.methods.getDepositNode(address).call();
-                    this.ethDeposit = localweb3.utils.fromWei(result[0], 'ether');
-                    this.pmtDeposit = result[1] / 10000;
+                    this.ethDeposit = localweb3.utils.fromWei(result['ETH'], 'ether');
+                    this.pmtDeposit = result['PMT'] / 10000;
                     this.ethMin = localweb3.utils.fromWei(result['minETH'], 'ether');
                     this.pmtMin = result['minPMT'] / 10000;
-                    this.refundStatus = depo[5];
-                    this.refundTimestamp = depo[4];
+                    this.refundStatus = result['refundState'];
+                    this.refundTimestamp = result['refundTime'];
                     return true;
                 } catch (e) {
+                    console.log(e);
                     return false;
                 }
-                //
-                // return nodeContract.methods.getDepositNode(address).call((err, result) => {
-                //     // console.log('error:');
-                //     // console.log(err);
-                //     console.log('res:');
-                //     console.log(result);
-                //     this.ethDeposit = localweb3.utils.fromWei(result[0], 'ether');
-                //     this.pmtDeposit = result[1] / 10000;
-                //     this.ethMin = localweb3.utils.fromWei(result['minETH'], 'ether');
-                //     this.pmtMin = result['minPMT'] / 10000;
-                // });
             },
             async getRevenueNode() {
                 const abi = this.$store.state.contracts.ABI;
@@ -465,20 +462,14 @@
                         data: txData,
                         chainId: 4
                     };
-                    console.log(txParams);
 
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
-
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
-                    });
+                    let transactionHash = await localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {});
+                    this.tx = transactionHash.logs.transactionHash;
                 }
             },
             async refund() {
@@ -515,12 +506,14 @@
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
+                    try {
+                        let transactionHash = await localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {});
+                        this.tx = transactionHash.logs.transactionHash;
+                    } catch (e) {
 
+                    }
                     localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                      this.tx = transactionHash;
                     });
                 }
             },
@@ -559,10 +552,7 @@
                     let raw = "0x" + serializedTx.toString("hex");
 
                     localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                      this.tx = transactionHash;
                     });
                 }
             },
@@ -600,10 +590,7 @@
                     let raw = "0x" + serializedTx.toString("hex");
 
                     localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
+                      this.tx = transactionHash;
                     });
                 }
             },
@@ -628,18 +615,6 @@
                 } catch (e) {
                    return false;
                 }
-                // return nodeContract.methods.NodeStorage().call((err, result) => {
-                //     if (err) {
-                //         console.log('error:');
-                //         console.log(err);
-                //     } else {
-                //         this.$store.commit('SET_NODE_STORAGE',
-                //             {
-                //                 storage: result,
-                //             }
-                //         );
-                //     }
-                // });
             },
             async getInfoNode() {
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -650,7 +625,7 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                     return nodeContract.methods.getInfoNode(address).call((err, result) => {
-                        console.log(result)
+                        // console.log(result)
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     if (typeof web3 !== 'undefined') {
@@ -666,10 +641,10 @@
                            let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
 
                            nodeContract.methods.getInfoNode(address).call(function (err, result) {
-                              console.log('error:');
-                              console.log(err);
-                              console.log('res:');
-                              console.log(result);
+                              // console.log('error:');
+                              // console.log(err);
+                              // console.log('res:');
+                              // console.log(result);
                             });
                         });
 
@@ -708,10 +683,10 @@
                            let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
 
                            nodeContract.methods.getInfoNode(address).call(function (err, result) {
-                              console.log('error:');
-                              console.log(err);
-                              console.log('res:');
-                              console.log(result);
+                              // console.log('error:');
+                              // console.log(err);
+                              // console.log('res:');
+                              // console.log(result);
                             });
                         });
 
@@ -729,6 +704,7 @@
                 let seconds = "0" + date.getSeconds();
                 let formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
                 this.refundTimer = formattedTime;
+                return formattedTime
             },
             collectTimestamp: function() {
                 const date = new Date(this.collectTimestamp*1000);
@@ -754,6 +730,7 @@
 
             // await this.requestRefund();
             let depo = await this.getDepositNode();
+            console.log(depo)
             this.collectBalance = await this.getRevenueNode();
 
             if (this.pmtApprove < this.pmtMin && this.pmtDeposit < this.pmtMin && this.pmtDeposit + this.pmtApprove < this.pmtMin) {

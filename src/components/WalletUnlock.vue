@@ -1,33 +1,33 @@
 <template>
     <div id="information">
             <div class="header">
-                Регистрация ноды
+                Node registration
             </div>
-            <p>Шаг 1 из 4: Регистрация ноды</p>
+            <p>Step 1 of 4: Node registration</p>
             <ul class="steps">
                 <li class="selected">
                     <span>
                         <img src="../assets/images/icon-load.png" alt="">
                     </span>
-                    <p>Загрузка ключа</p>
+                    <p>Wallet unlock</p>
                 </li>
                 <li>
                     <span>
                         <img src="../assets/images/icon-pm.png" alt="">
                     </span>
-                    <p>Отправка PMT</p>
+                    <p>Node Settings</p>
                 </li>
                 <li>
                     <span>
                         <img src="../assets/images/icon-config.png" alt="">
                     </span>
-                    <p>Настройка ноды</p>
+                    <p>Making deposit</p>
                 </li>
                 <li>
                     <span>
                         <img src="../assets/images/icon-done.png" alt="">
                     </span>
-                    <p>Валидация ноды</p>
+                    <p>Node validation</p>
                 </li>
             </ul>
 
@@ -39,32 +39,25 @@
                     </span>
                     <span class="checkmark"></span>
                 </li>
-                <li>
-                    <input type="radio" name="unlockType" v-model="unlockType" value="metamask">
-                    <span class="text-wrap">
-                        <p>Metamask service</p>
-                    </span>
-                    <span class="checkmark"></span>
-                </li>
-                <li>
-                    <input type="radio" name="unlockType" v-model="unlockType" value="ladger">
-                    <span class="text-wrap">
-                        <p>Ladger keystore</p>
-                    </span>
-                    <span class="checkmark"></span>
-                </li>
+                <!--<li>-->
+                    <!--<input type="radio" name="unlockType" v-model="unlockType" value="metamask">-->
+                    <!--<span class="text-wrap">-->
+                        <!--<p>Metamask service</p>-->
+                    <!--</span>-->
+                    <!--<span class="checkmark"></span>-->
+                <!--</li>-->
+                <!--<li>-->
+                    <!--<input type="radio" name="unlockType" v-model="unlockType" value="ledger">-->
+                    <!--<span class="text-wrap">-->
+                        <!--<p>Ledger keystore</p>-->
+                    <!--</span>-->
+                    <!--<span class="checkmark"></span>-->
+                <!--</li>-->
             </ul>
 
             <div class="info">
                 <p>
-                    Entering your private key on a website dangerous. If our website is compromised or you accidentally visit a different website, your funds will be stolen. Please consider:
-                </p>
-                <ul>
-                    <li>MetaMask or A Hardware Wallet or Running MEW Offline &amp; Locally</li>
-                    <li>Learning How to Protect Yourself and Your Funds</li>
-                </ul>
-                <p>
-                    If you must, please double-check the URL &amp; SSL cert. It should say https://www.myetherwallet.com &amp; MYETHERWALLET INC in your URL bar.
+                        Entering your private key on a website dangerous. If our website is compromised or you accidentally visit a different website, your funds will be stolen. Please consider:
                 </p>
             </div>
             <div v-if="this.unlockType == 'metamask'" class="upload-btn-wrapper">
@@ -98,7 +91,7 @@
                     Unlock
                 </button>
             </div>
-            <div v-if="this.unlockType == 'ladger'">
+            <div v-if="this.unlockType == 'ledger'">
 
             </div>
         </div>
