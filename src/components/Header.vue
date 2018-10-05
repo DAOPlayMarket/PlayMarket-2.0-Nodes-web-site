@@ -130,7 +130,7 @@
             background-repeat: no-repeat
             background-image: url("../assets/images/icons/logo.svg")
             @media only screen and (max-width: 991px)
-                left: 50%
+                left: 5%
                 transform: translate3d(-50%, -50%, 0)
         #search
             position: relative
