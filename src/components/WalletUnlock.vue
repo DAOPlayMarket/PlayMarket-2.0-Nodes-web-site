@@ -198,10 +198,33 @@
                         }
                     });
                 }
-            }
+            },
+            async getContractAddress() {
+                const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                const contractAdr = this.$store.state.contracts.contractProxy;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.proxyABI;
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                return nodeContract.methods.getLastVersion().call((err, result) => {
+                    // console.log(err)
+                    // console.log(result.PlayMarket)
+                    // console.log(result)
+                });
+            },
         },
         mounted: async function () {
             // getEthAddress().then(a => console.log(a));
+            let versions = await this.getContractAddress();
+            if (typeof versions != 'undefined') {
+                let contractAddress = versions.PlayMarket;
+                this.$store.commit(
+                    'SET_MAIN_CONTRACT',
+                    {
+                        address: contractAddress,
+                    }
+                );
+            }
         },
     }
 </script>

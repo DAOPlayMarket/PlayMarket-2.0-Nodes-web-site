@@ -1383,10 +1383,388 @@ export default new Vuex.Store({
 		"type": "event"
 	}
 ],
-            tokenAddress: '0x123',
-            nodeAddress: '0x123',
-            contractAddress: '0x94f9657E2AF032b7413FBb9CEFC3f42313515B9e',
+			proxyABI : [
+				{
+					"constant": true,
+					"inputs": [],
+					"name": "getLastVersion",
+					"outputs": [
+						{
+							"name": "PlayMarket",
+							"type": "address"
+						},
+						{
+							"name": "ICO",
+							"type": "address"
+						},
+						{
+							"name": "version",
+							"type": "bytes32"
+						},
+						{
+							"name": "endTime",
+							"type": "uint256"
+						},
+						{
+							"name": "number",
+							"type": "uint256"
+						}
+					],
+					"payable": false,
+					"stateMutability": "view",
+					"type": "function"
+				},
+				{
+					"constant": true,
+					"inputs": [
+						{
+							"name": "",
+							"type": "address"
+						}
+					],
+					"name": "Agents",
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool"
+						}
+					],
+					"payable": false,
+					"stateMutability": "view",
+					"type": "function"
+				},
+				{
+					"constant": false,
+					"inputs": [],
+					"name": "acceptOwnership",
+					"outputs": [],
+					"payable": false,
+					"stateMutability": "nonpayable",
+					"type": "function"
+				},
+				{
+					"constant": false,
+					"inputs": [
+						{
+							"name": "_PlayMarket",
+							"type": "address"
+						},
+						{
+							"name": "_ICO",
+							"type": "address"
+						},
+						{
+							"name": "_version",
+							"type": "bytes32"
+						},
+						{
+							"name": "_endTime",
+							"type": "uint256"
+						}
+					],
+					"name": "addVersion",
+					"outputs": [],
+					"payable": false,
+					"stateMutability": "nonpayable",
+					"type": "function"
+				},
+				{
+					"constant": true,
+					"inputs": [
+						{
+							"name": "",
+							"type": "uint256"
+						}
+					],
+					"name": "versions",
+					"outputs": [
+						{
+							"name": "PlayMarket",
+							"type": "address"
+						},
+						{
+							"name": "ICO",
+							"type": "address"
+						},
+						{
+							"name": "version",
+							"type": "bytes32"
+						},
+						{
+							"name": "endTime",
+							"type": "uint256"
+						}
+					],
+					"payable": false,
+					"stateMutability": "view",
+					"type": "function"
+				},
+				{
+					"constant": true,
+					"inputs": [],
+					"name": "owner",
+					"outputs": [
+						{
+							"name": "",
+							"type": "address"
+						}
+					],
+					"payable": false,
+					"stateMutability": "view",
+					"type": "function"
+				},
+				{
+					"constant": true,
+					"inputs": [
+						{
+							"name": "_version",
+							"type": "bytes32"
+						}
+					],
+					"name": "getVersion",
+					"outputs": [
+						{
+							"name": "PlayMarket",
+							"type": "address"
+						},
+						{
+							"name": "ICO",
+							"type": "address"
+						},
+						{
+							"name": "version",
+							"type": "bytes32"
+						},
+						{
+							"name": "endTime",
+							"type": "uint256"
+						},
+						{
+							"name": "number",
+							"type": "uint256"
+						}
+					],
+					"payable": false,
+					"stateMutability": "view",
+					"type": "function"
+				},
+				{
+					"constant": true,
+					"inputs": [],
+					"name": "defAgent",
+					"outputs": [
+						{
+							"name": "",
+							"type": "address"
+						}
+					],
+					"payable": false,
+					"stateMutability": "view",
+					"type": "function"
+				},
+				{
+					"constant": false,
+					"inputs": [
+						{
+							"name": "_PlayMarket",
+							"type": "address"
+						},
+						{
+							"name": "_ICO",
+							"type": "address"
+						},
+						{
+							"name": "_version",
+							"type": "bytes32"
+						},
+						{
+							"name": "_endTime",
+							"type": "uint256"
+						},
+						{
+							"name": "_i",
+							"type": "uint256"
+						}
+					],
+					"name": "changeVersion",
+					"outputs": [],
+					"payable": false,
+					"stateMutability": "nonpayable",
+					"type": "function"
+				},
+				{
+					"constant": true,
+					"inputs": [],
+					"name": "newOwner",
+					"outputs": [
+						{
+							"name": "",
+							"type": "address"
+						}
+					],
+					"payable": false,
+					"stateMutability": "view",
+					"type": "function"
+				},
+				{
+					"constant": false,
+					"inputs": [
+						{
+							"name": "_newOwner",
+							"type": "address"
+						}
+					],
+					"name": "transferOwnership",
+					"outputs": [],
+					"payable": false,
+					"stateMutability": "nonpayable",
+					"type": "function"
+				},
+				{
+					"constant": false,
+					"inputs": [
+						{
+							"name": "_agent",
+							"type": "address"
+						},
+						{
+							"name": "_status",
+							"type": "bool"
+						}
+					],
+					"name": "updateAgent",
+					"outputs": [],
+					"payable": false,
+					"stateMutability": "nonpayable",
+					"type": "function"
+				},
+				{
+					"inputs": [
+						{
+							"name": "_PlayMarket",
+							"type": "address"
+						},
+						{
+							"name": "_ICO",
+							"type": "address"
+						},
+						{
+							"name": "_version",
+							"type": "bytes32"
+						},
+						{
+							"name": "_endTime",
+							"type": "uint256"
+						}
+					],
+					"payable": false,
+					"stateMutability": "nonpayable",
+					"type": "constructor"
+				},
+				{
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "PlayMarket",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "ICO",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "version",
+							"type": "bytes32"
+						},
+						{
+							"indexed": false,
+							"name": "endTime",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "i",
+							"type": "uint256"
+						}
+					],
+					"name": "addVersionLog",
+					"type": "event"
+				},
+				{
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "PlayMarket",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "ICO",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "version",
+							"type": "bytes32"
+						},
+						{
+							"indexed": false,
+							"name": "endTime",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "i",
+							"type": "uint256"
+						}
+					],
+					"name": "changeVersionLog",
+					"type": "event"
+				},
+				{
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "version",
+							"type": "bytes32"
+						},
+						{
+							"indexed": false,
+							"name": "i",
+							"type": "uint256"
+						}
+					],
+					"name": "lastVersionLog",
+					"type": "event"
+				},
+				{
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": true,
+							"name": "_from",
+							"type": "address"
+						},
+						{
+							"indexed": true,
+							"name": "_to",
+							"type": "address"
+						}
+					],
+					"name": "OwnershipTransferred",
+					"type": "event"
+				}
+			],
+            tokenAddress: '',
+            nodeAddress: '',
+            contractAddress: '',
             contractPMT: '0x538106e553f5BA3298199C1998ba061922815A6c',
+            contractProxy: '0x87ef26717654c92b6ecc19e3c7a145406b112315',
             contractStorage: '',
             web3provider: 'wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'
         },
@@ -1398,6 +1776,9 @@ export default new Vuex.Store({
         },
         UPDATE_NODE_CONF(state,node_number) {
             state.server = 'https://n' + node_number + '.playmarket.io:3000';
+        },
+		SET_MAIN_CONTRACT(state,data) {
+            state.contracts.contractAddress = data.address;
         },
         SET_IS_USER_AUTHENTICATED (state, auth) {
             state.user.isUserAuthenticated = auth.isAuth;

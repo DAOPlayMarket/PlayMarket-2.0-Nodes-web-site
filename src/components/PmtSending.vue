@@ -34,10 +34,7 @@
             <div v-if="!nodeConfirmation" class="deposit">
                 <div class="info">
                     <p>
-                        Стоимость регистрации ноды 2000 PMT, кроме того необходимо внести депозит в 10 ETH для чегототам.
-                    </p>
-                    <p>
-                        Чтобы продолжить удостоверьтесь, что на вашем кошельке ETH достаточно токенов PMT для регистрации ноды.
+                        The cost of registering nodes {{ pmtMin }} PMT, in addition, you must make a deposit of {{ ethMin }} ETH for its needs. To continue, make sure that your wallet ETH has enough PMT tokens to register the node.
                     </p>
 
                     <div v-if="depositStep == 1" class="info">
@@ -73,21 +70,26 @@
                     </div>
                 </div>
             </div>
-            <div class="refund">
-                <div v-if="" class="info">
-                    <p>
-                        Request refund
-                    </p>
-                    <div class="form-input">
+            <div v-if="pmtDeposit != 0 || ethDeposit != 0" class="refund">
+                <h2>
+                <!--<h2 @click="refundCollapsed = !refundCollapsed">-->
+                    Request refund
+                </h2>
+                <div  class="info">
+                <!--<div v-show="!refundCollapsed" class="info">-->
+                    <div v-if="!refundStatus" class="form-input">
                         Value of ETH for refund
                         <input type="text" v-model="ethRefund">
                     </div>
-                    <div class="form-input">
+                    <div v-if="!refundStatus" class="form-input">
                         Value of PMT for refund
                         <input type="text" v-model="pmtRefund">
                     </div>
+                    <div>
+                        You can collect your refund after {{ refundTimer }}
+                    </div>
                     <div class="pmt-btn-wrapper">
-                        <button class="btn" @click="requestRefund()">
+                        <button v-if="!refundStatus" class="btn" @click="requestRefund()">
                             <img src="../assets/images/icon-pm.png" alt="">
                             Request refund
                         </button>
@@ -96,12 +98,9 @@
                             Refund
                         </button>
                     </div>
-                    <div>
-                        You can collect your refund after {{ refundTimer }}
-                    </div>
                 </div>
             </div>
-            <div v-if="!nodeConfirmation" class="collect">
+            <div v-if="this.collectBalance != 0" class="collect">
                 <p>
                     Collect your amount
                 </p>
@@ -113,7 +112,6 @@
                         </button>
                     </div>
                 </div>
-
                 <div v-if="collectStatus">
                     You can collect your amount after {{ collectTimer }}
                     <div class="pmt-btn-wrapper">
@@ -124,69 +122,7 @@
                     </div>
                 </div>
             </div>
-        <!--<div class="pmt-btn-wrapper">-->
-            <!--<button class="btn" @click="TokenApprove()">-->
-                <!--<img src="../assets/images/icon-pm.png" alt="">-->
-                <!--Перевести PMT-->
-            <!--</button>-->
-
-            <!--<button class="btn" @click="sendPmt()">-->
-                <!--<img src="../assets/images/icon-pm.png" alt="">-->
-                <!--Внести депозит-->
-            <!--</button>-->
-
-            <!--<button class="btn" @click="requestRefund()">-->
-                <!--<img src="../assets/images/icon-pm.png" alt="">-->
-                <!--Запросить возврат-->
-            <!--</button>-->
-
-            <!--<button class="btn" @click="refund()">-->
-                <!--<img src="../assets/images/icon-pm.png" alt="">-->
-                <!--Refund-->
-            <!--</button>-->
-        <!--</div>-->
         </div>
-        <!--<div class="node-operation">-->
-            <!--<p>Node options</p>-->
-            <!--<div class="node-item">-->
-                <!--<div class="header">-->
-                    <!--<div class="caption">-->
-                        <!--{{ nodeAddress }}-->
-                    <!--</div>-->
-                    <!--<div class="status" style="align-self: flex-end">-->
-                        <!--Node status: {{ nodeConfirmation ? 'Confirm' : 'Not Confirm' }}-->
-                    <!--</div>-->
-                <!--</div>-->
-                <!--<div class="content">-->
-                    <!--<div class="info-item">-->
-                        <!--<div class="text">-->
-                            <!--Загрузка ноды-->
-                        <!--</div>-->
-                        <!--<div class="information">-->
-                            <!--21%-->
-                        <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="values">-->
-                        <!--<div class="info-item" style="padding-right: 15px">-->
-                            <!--<div class="text">-->
-                                <!--ETH deposit-->
-                            <!--</div>-->
-                            <!--<div class="information">-->
-                                <!--{{ pmtDeposit }}-->
-                            <!--</div>-->
-                        <!--</div>-->
-                        <!--<div class="info-item">-->
-                            <!--<div class="text">-->
-                                <!--PMT deposit-->
-                            <!--</div>-->
-                            <!--<div class="information">-->
-                                <!--{{ ethDeposit }}-->
-                            <!--</div>-->
-                        <!--</div>-->
-                    <!--</div>-->
-                <!--</div>-->
-            <!--</div>-->
-        <!--</div>-->
         <router-link to="/registration/2" class="btn-back">
             Вернуться на предыдущий шаг
         </router-link >
@@ -195,7 +131,6 @@
 
 <script>
     import Web3 from 'web3'
-    import web3Utils from 'web3-utils'
     import ethTx from 'ethereumjs-tx'
 
     export default {
@@ -209,9 +144,11 @@
                 refundTimestamp: 0,
                 collectStatus: false,
                 collectTimestamp: 0,
+                collectBalance: 0,
                 refundTimer: '',
                 collectTimer: '',
                 ethVal: 1,
+                ethMin: 1,
                 pmtVal: 5000,
                 pmtMin: 5000,
                 pmtApprove: 0,
@@ -219,36 +156,17 @@
                 pmtRefund: 0,
                 ethDeposit: 0,
                 ethRefund: 0,
+                refundCollapsed: true,
+                depositCollapsed: true,
             }
         },
         methods: {
-            async getBalance(address) {
-                let balance = '';
-                if (this.$store.state.user.unlockType == 'metamask') {
-                    console.log('balance:');
-                    web3.eth.getBalance(address, (err, result) => {
-                        balance = web3.fromWei(result, "ether");
-                        console.log(balance + " ETH");
-                    });
-                }
-                return balance;
-            },
-            async getTokenBalance(address) {
-                // var web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/QLdzys0ezvUkTnMfUYpV"));
-                if (this.$store.state.user.unlockType == 'metamask') {
-
-                }
-                var tokenAddress = this.$store.state.contracts.contractAddress;
-                var tokenContract = web3.eth.contract(this.$store.state.abi).at(tokenAddress);
-                var tokenBalance = tokenContract.balanceOf(ethereumAddress).toNumber();
-                return tokenBalance;
-            },
             async TokenApprove() {
                 if (this.$store.state.user.unlockType == 'keystore') {
                     // transaction.sign(this.$store.state.user.wallet.privateKey)
                     //send signed transaction to PM service
                     // .....some code
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractPMT;
                     const address = this.$store.state.user.address;
                     // PMT ABI
@@ -287,16 +205,16 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                     let txData = nodeContract.methods.approve(nodeStorage, this.pmtVal * 10000).encodeABI();
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
-                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
+                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
                         data: txData,
-                        value: web3Utils.toHex(0)
+                        value: localweb3.utils.toHex(0)
                     }) + 100000);
 
                     let txParams = {
-                        nonce: web3Utils.toHex(nonce),
+                        nonce: localweb3.utils.toHex(nonce),
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
                         value: '0x00',
@@ -328,7 +246,7 @@
             },
             async tokenAllowance() {
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractPMT;
                     const nodeStorage = this.$store.state.contracts.contractStorage;
                     const address = this.$store.state.user.address;
@@ -392,19 +310,19 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                     let txData = nodeContract.methods.makeDeposit(address, 50000000).encodeABI();
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
-                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
+                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
                         data: txData,
-                        value: web3Utils.toHex(web3Utils.toWei(String(this.ethVal)))
+                        value: localweb3.utils.toHex(localweb3.utils.toWei(String(this.ethVal)))
                     }) + 100000);
 
                     let txParams = {
-                        nonce: web3Utils.toHex(nonce),
+                        nonce: localweb3.utils.toHex(nonce),
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
-                        value: web3Utils.toHex(web3Utils.toWei(String(this.ethVal))),
+                        value: localweb3.utils.toHex(localweb3.utils.toWei(String(this.ethVal))),
                         to: contractAdr,
                         data: txData,
                         chainId: 4
@@ -440,19 +358,19 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                     let txData = nodeContract.methods.makeDepositETH(address).encodeABI();
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
-                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
+                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
                         data: txData,
-                        value: web3Utils.toHex(String(web3Utils.toWei(String(9))))
+                        value: localweb3.utils.toHex(String(localweb3.utils.toWei(String(9))))
                     }) + 100000);
 
                     let txParams = {
-                        nonce: web3Utils.toHex(nonce),
+                        nonce: localweb3.utils.toHex(nonce),
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
-                        value: web3Utils.toHex(String(web3Utils.toWei(String(9)))),
+                        value: localweb3.utils.toHex(String(localweb3.utils.toWei(String(9)))),
                         to: contractAdr,
                         data: txData,
                         chainId: 4
@@ -473,34 +391,64 @@
             },
             async getDepositNode() {
                 const abi = this.$store.state.contracts.ABI;
-
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
 
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                return nodeContract.methods.getDepositNode(address).call((err, result) => {
-                    // console.log('error:');
-                    // console.log(err);
-                    console.log('res:');
-                    console.log(result);
-                    this.ethDeposit = web3Utils.fromWei(result[0], 'ether');
+                try {
+                    let result = await nodeContract.methods.getDepositNode(address).call();
+                    this.ethDeposit = localweb3.utils.fromWei(result[0], 'ether');
                     this.pmtDeposit = result[1] / 10000;
-                });
+                    this.ethMin = localweb3.utils.fromWei(result['minETH'], 'ether');
+                    this.pmtMin = result['minPMT'] / 10000;
+                    this.refundStatus = depo[5];
+                    this.refundTimestamp = depo[4];
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+                //
+                // return nodeContract.methods.getDepositNode(address).call((err, result) => {
+                //     // console.log('error:');
+                //     // console.log(err);
+                //     console.log('res:');
+                //     console.log(result);
+                //     this.ethDeposit = localweb3.utils.fromWei(result[0], 'ether');
+                //     this.pmtDeposit = result[1] / 10000;
+                //     this.ethMin = localweb3.utils.fromWei(result['minETH'], 'ether');
+                //     this.pmtMin = result['minPMT'] / 10000;
+                // });
+            },
+            async getRevenueNode() {
+                const abi = this.$store.state.contracts.ABI;
+
+                const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+
+                try {
+                    let amount = await nodeContract.methods.getRevenueNode(address).call();
+                    return amount;
+                } catch (e) {
+                    return 0;
+                }
             },
             async requestRefund() {
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
                     const abi = this.$store.state.contracts.ABI;
 
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                    let txData = nodeContract.methods.requestRefund(web3Utils.toWei(String(this.ethRefund)), String(this.pmtRefund*10000)).encodeABI();
-                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
-                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    let txData = nodeContract.methods.requestRefund(localweb3.utils.toWei(String(this.ethRefund)), String(this.pmtRefund*10000)).encodeABI();
+                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
+                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
                         value: '0x00',
@@ -509,7 +457,7 @@
 
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                     let txParams = {
-                        nonce: web3Utils.toHex(nonce),
+                        nonce: localweb3.utils.toHex(nonce),
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
                         value: '0x00',
@@ -535,7 +483,7 @@
             },
             async refund() {
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
                     const abi = this.$store.state.contracts.ABI;
@@ -543,8 +491,8 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                     let txData = nodeContract.methods.refund().encodeABI();
-                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
-                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
+                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
                         data: txData,
@@ -552,7 +500,7 @@
                     }));
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                     let txParams = {
-                        nonce: web3Utils.toHex(nonce),
+                        nonce: localweb3.utils.toHex(nonce),
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
                         value: '0x00',
@@ -578,7 +526,7 @@
             },
             async requestCollectNode() {
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
                     const abi = this.$store.state.contracts.ABI;
@@ -586,17 +534,16 @@
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                     let txData = nodeContract.methods.requestCollectNode().encodeABI();
-                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
-                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
+                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
-                        value: '0x00',
                         data: txData,
                     }));
 
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                     let txParams = {
-                        nonce: web3Utils.toHex(nonce),
+                        nonce: localweb3.utils.toHex(nonce),
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
                         value: '0x00',
@@ -621,27 +568,26 @@
             },
             async collectNode() {
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
                     const abi = this.$store.state.contracts.ABI;
-
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                    const nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                     let txData = nodeContract.methods.collectNode().encodeABI();
-                    let gasPrice = await web3Utils.toHex((await localweb3.eth.getGasPrice()));
-                    let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
+
+                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                         from: address,
                         to: contractAdr,
                         data: txData,
-                        value: '0x00'
                     }));
+
                     let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                     let txParams = {
-                        nonce: web3Utils.toHex(nonce),
+                        nonce: localweb3.utils.toHex(nonce),
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
-                        value: '0x00',
                         to: contractAdr,
                         data: txData,
                         chainId: 4
@@ -664,28 +610,40 @@
             async getNodeStorage() {
                 const abi = this.$store.state.contracts.ABI;
 
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
 
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                return nodeContract.methods.NodeStorage().call((err, result) => {
-                    if (err) {
-                        console.log('error:');
-                        console.log(err);
-                    } else {
-                        this.$store.commit('SET_NODE_STORAGE',
-                            {
-                                storage: result,
-                            }
-                        );
-                    }
-                });
+                try {
+                   let storge = await nodeContract.methods.NodeStorage().call();
+                   console.log(storge)
+                   this.$store.commit('SET_NODE_STORAGE',
+                        {
+                            storage: storge,
+                        }
+                    );
+                   return true;
+                } catch (e) {
+                   return false;
+                }
+                // return nodeContract.methods.NodeStorage().call((err, result) => {
+                //     if (err) {
+                //         console.log('error:');
+                //         console.log(err);
+                //     } else {
+                //         this.$store.commit('SET_NODE_STORAGE',
+                //             {
+                //                 storage: result,
+                //             }
+                //         );
+                //     }
+                // });
             },
             async getInfoNode() {
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
                     const abi = this.$store.state.contracts.ABI;
@@ -724,7 +682,7 @@
                 const abi = this.$store.state.contracts.ABI;
 
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
 
@@ -783,7 +741,7 @@
         },
         mounted: async function () {
             this.$store.commit('SHOW_SPINNER');
-
+            const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
             // let balance = await this.getBalance(this.$store.state.user.address);
             await this.getNodeStorage();
             let nodeInfo = await this.getInfoNode();
@@ -796,19 +754,14 @@
 
             // await this.requestRefund();
             let depo = await this.getDepositNode();
-
-            this.ethDeposit = web3Utils.fromWei(depo[0], 'ether');
-            this.pmtDeposit = depo[1] / 10000;
-            this.refundStatus = depo[5];
-            this.refundTimestamp = depo[4];
+            this.collectBalance = await this.getRevenueNode();
 
             if (this.pmtApprove < this.pmtMin && this.pmtDeposit < this.pmtMin && this.pmtDeposit + this.pmtApprove < this.pmtMin) {
                 this.depositStep = 1;
             } else {
                 this.depositStep = 2;
             }
-            // this.sendETH();
-            // this.depositStep = 3;
+
             this.$store.commit('HIDE_SPINNER');
         },
     }
@@ -817,6 +770,7 @@
 <style scoped lang="sass">
     #pmtSend
         max-width: 500px
+        margin-top: 100px
         padding-right: 420px
         display: flex
         flex-direction: column
@@ -894,6 +848,14 @@
                     width: 100%
                     left: -15px
 
+        .refund
+            h2
+                font-size: 24px
+                padding: 10px 10px 10px 0
+                /*cursor: pointer*/
+                /*background: #fbfafc*/
+                /*width: 220px*/
+                /*text-align: center*/
         .info
             p
                 padding-bottom: 20px

@@ -128,7 +128,6 @@
 
 <script>
     import Web3 from 'web3'
-    import web3Utils from 'web3-utils'
     import ethTx from 'ethereumjs-tx'
 
     export default {
@@ -151,7 +150,7 @@
                 //send transaction
                 let localweb3 = {};
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     localweb3 = new Web3(window.web3.currentProvider);
                 } else if (this.$store.state.user.unlockType == 'ledger') {
@@ -165,16 +164,16 @@
                 let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                 let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
-                let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
-                let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
+                let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                     from: address,
                     to: contractAdr,
                     data: txData,
-                    value: web3Utils.toHex(0)
+                    value: localweb3.utils.toHex(0)
                 }) + 100000);
 
                 let txParams = {
-                    nonce: web3Utils.toHex(nonce),
+                    nonce: localweb3.utils.toHex(nonce),
                     gasPrice: gasPrice,
                     gasLimit: gasLimit,
                     value: '0x00',
@@ -213,7 +212,7 @@
                 this.$store.commit('SHOW_SPINNER');
                 let localweb3 = {};
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     localweb3 = new Web3(window.web3.currentProvider);
                 } else if (this.$store.state.user.unlockType == 'ledger') {
@@ -227,17 +226,17 @@
                 let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                 let txData = nodeContract.methods.changeInfoNode(this.hash, this.hashType, this.ip, this.coordinates).encodeABI();
-                let gasPrice = await web3Utils.toHex(await localweb3.eth.getGasPrice());
+                let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
 
-                let gasLimit = await web3Utils.toHex(await localweb3.eth.estimateGas({
+                let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
                     from: address,
                     to: contractAdr,
                     data: txData,
-                    value: web3Utils.toHex(0)
+                    value: localweb3.utils.toHex(0)
                 }) + 100000);
 
                 let txParams = {
-                    nonce: web3Utils.toHex(nonce),
+                    nonce: localweb3.utils.toHex(nonce),
                     gasPrice: gasPrice,
                     gasLimit: gasLimit,
                     value: '0x00',
@@ -275,181 +274,15 @@
 
                 }
             },
-            async getDepositNode() {
-                const abi = this.$store.state.contracts.ABI;
-
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
-                const contractAdr = this.$store.state.contracts.contractAddress;
-                const address = this.$store.state.user.address;
-
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
-                let txData = nodeContract.methods.getDepositNode(address).call((err, result) => {
-                    console.log('error:');
-                    console.log(err);
-                    console.log('res:');
-                    console.log(result);
-                });
-            },
-            async sendKeystoreTx() {
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
-                // console.log(this.$store.state.user.wallet);
-                const contractAdr = this.$store.state.contracts.contractAddress;
-                const address = this.$store.state.user.address;
-                const abi = this.$store.state.contracts.ABI;
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
-                let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
-
-                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-
-                console.log(txData);
-
-                let txParams = {
-                    nonce: web3Utils.toHex(nonce),
-                    gasPrice: web3Utils.toHex(100000000),
-                    gasLimit: web3Utils.toHex(250000),
-                    value: '0x00',
-                    to: contractAdr,
-                    data: txData,
-                    chainId: 4
-                };
-                console.log(txParams);
-
-                let tx = new ethTx(txParams);
-                tx.sign(this.$store.state.user.wallet._privKey);
-                // let rawTx = tx.sign(this.$store.state.user.wallet._privKey);
-                let serializedTx = tx.serialize();
-
-                let raw = "0x" + serializedTx.toString("hex");
-
-                console.log(address);
-
-                localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                  console.log('error:');
-                  console.log(err);
-                  console.log('TX:');
-                  console.log(transactionHash);
-                });
-
-            },
-            async sendEth() {
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
-
-                const address = this.$store.state.user.address;
-
-                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-
-                console.log(nonce);
-
-                let txParams = {
-                    nonce: web3Utils.toHex(nonce),
-                    gasPrice: web3Utils.toHex(100000000),
-                    gasLimit: web3Utils.toHex(250000),
-                    value: web3Utils.toHex(10),
-                    to: '0x5EE74D1DEF74BA3316fb217D62d4689D870Ce0bF',
-                    data: '0x123',
-                    chainId: 4
-                };
-                console.log(txParams);
-
-                let tx = new ethTx(txParams);
-                tx.sign(this.$store.state.user.wallet._privKey);
-
-                let serializedTx = tx.serialize();
-
-                let raw = "0x" + serializedTx.toString("hex");
-
-                localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                  console.log('error:');
-                  console.log(err);
-                  console.log('TX:');
-                  console.log(transactionHash);
-                  localweb3.eth.getTransactionReceipt(transactionHash)
-                    .then(console.log)
-                });
-
-            },
-            async sendMetamaskTx() {
-                if (typeof web3 !== 'undefined') {
-                   //check that metaMask is installed
-                    const localWeb3 = new Web3(window.web3.currentProvider);
-
-                    let rawTransaction = {
-                      "from": "0x4319825eEFea536693AbA06469e6dE0b5e7693fe",
-                      "to": "0x5EE74D1DEF74BA3316fb217D62d4689D870Ce0bF",
-                      "value": web3Utils.toHex(web3Utils.toWei("0.001", "ether")),
-                      "data": "0xdf",
-                      "gas": 200000,
-                      "chainId": 3
-                    };
-
-                    localWeb3.eth.getAccounts().then(account => {
-                       localWeb3.eth.getBalance(account[0],(error, result) => {
-                           let address = account[0];
-                           let balance = result;
-                           //check balance
-                           if (true) {
-
-                               const abi = this.$store.state.contracts.ABI;
-                               const contractAdr = this.$store.state.contracts.contractAddress;
-
-                               let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
-
-                               const options = {
-                                  // "value": web3Utils.toHex(web3Utils.toWei("0.001", "ether")),
-                                   'from': address,
-                                   "to": contractAdr,
-                                   'gas': 500000,
-                                   'gasPrice': 100,
-                               };
-
-                               // let data = {
-                               //      function: 'addNode',
-                               //      params: [hashType, reserv, hash, ip, coordinates]
-                               //  };
-
-                               // let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
-                               // console.log(txData);
-
-                               nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).call(options,(error,tHash) => {
-                                   console.log(error);
-                                   console.log(tHash);
-
-                               });
-
-                               let tx = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
-                               let transaction = {
-                                   'from': address,
-                                   "to": contractAdr,
-                                   'gas': 500000,
-                                   'gasPrice': 1000,
-                                   'data': tx,
-                                   "chainId": 4
-                               };
-                               // localWeb3.eth.sendTransaction(transaction, (err, transactionHash) => {
-                               //     if (!err) {
-                               //         console.log(transactionHash + " success");
-                               //     }
-                               // });
-                           }
-                       });
-                    });
-
-                }
-                else{
-                   console.log('MetaMask is not installed')
-                }
-            },
             async getInfoNode() {
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
                     const abi = this.$store.state.contracts.ABI;
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
-                    return nodeContract.methods.getInfoNode(address).call((err, result) => {
+                    try {
+                        let result = await  nodeContract.methods.getInfoNode(address).call();
                         this.regStatus = typeof result != 'undefined';
                         if (this.regStatus) {
                             this.hashType = result[0];
@@ -461,7 +294,10 @@
                             this.coordinates = result[5];
                             this.getConfirmationNode();
                         }
-                    });
+                        return result;
+                    } catch (e) {
+                        return false;
+                    }
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     if (typeof web3 !== 'undefined') {
                        //check that metaMask is installed
@@ -492,22 +328,15 @@
                 const abi = this.$store.state.contracts.ABI;
 
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider('wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'));
+                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                     const contractAdr = this.$store.state.contracts.contractAddress;
                     const address = this.$store.state.user.address;
 
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
                     nodeContract.methods.getConfirmationNode(address).call((err, result) => {
-                      // console.log('error:');
-                      // console.log(err);
-                      // console.log('res:');
-                      // console.log(result);
                       if (typeof result != 'undefined') {
                           this.nodeConfirmation = result;
-                          // if (!this.nodeConfirmation) {
-                          //     this.$router.push({ path: `/registration/3` })
-                          // }
                       }
 
                     });
@@ -661,6 +490,7 @@
             border-radius: 22.5px
             font-size: 20px
             font-weight: bold
+            cursor: pointer
             img
                 margin-right: 10px
     .btn-back
