@@ -1,16 +1,15 @@
 <template>
     <header id="header">
         <router-link to="/" id="logo"><span class="logo_text">DAO Playmarket 2.0</span></router-link>
-        <div class="links">
-            <div class="icon-bell"></div>
-            <div id="auth">
-                <router-link v-if="!$store.state.user.isUserAuthenticated" :to="'/auth/'">login</router-link>
-                <span v-if="$store.state.user.isUserAuthenticated" @click="$store.commit('SET_IS_USER_UNAUTHENTICATED')">
-                    <router-link :to="'/'" class="auth-btn">logout</router-link>
-                </span>
-            </div>
-        </div>
-
+        <!--<div class="links">-->
+            <!--<div class="icon-bell"></div>-->
+            <!--<div id="auth">-->
+                <!--<router-link v-if="!$store.state.user.isUserAuthenticated" :to="'/auth/'">login</router-link>-->
+                <!--<span v-if="$store.state.user.isUserAuthenticated" @click="$store.commit('SET_IS_USER_UNAUTHENTICATED')">-->
+                    <!--<router-link :to="'/'" class="auth-btn">logout</router-link>-->
+                <!--</span>-->
+            <!--</div>-->
+        <!--</div>-->
     </header>
 </template>
 

@@ -49,8 +49,8 @@
                 <input type="text" v-model="hash">
             </div>
             <div class="form-input">
-                hashTag
-                <input type="text" v-model="this.hashTag" disabled>
+                hashType
+                <input type="text" v-model="this.hashType" disabled>
             </div>
             <!--<span>-->
                 <!--From:-->
@@ -94,11 +94,11 @@
             </div>
             <div class="form-input">
                 hash
-                <input type="text" v-model="hash">
+                <input type="text" v-model="hash" :placeholder="hashPl">
             </div>
             <div class="form-input">
-                hashTag
-                <input type="text" v-model="this.hashTag" disabled>
+                HashType
+                <input type="text" v-model="this.hashType" disabled>
             </div>
 
             <div class="form-input">
@@ -129,6 +129,7 @@
 <script>
     import Web3 from 'web3'
     import ethTx from 'ethereumjs-tx'
+    import axios from 'axios'
 
     export default {
         name: "node-settings",
@@ -139,9 +140,10 @@
                 nodeConfirmation: false,
                 hashType: 1,
                 hashTag: 'IPFS',
-                hash: '0x5cd5d2ed1f79e1c9bc055bb29663060b1c4007bf',
+                hash: '',
+                hashPl: 'QmVtYjNij3KeyGmcgg7yVXWskLaBtov3UYL9pgcGK3MCWu',
                 ip: '192.168.1.1',
-                coordinates: '109.194.37.82'
+                coordinates: '109.194:37.82'
             }
         },
         methods: {
@@ -195,7 +197,7 @@
                     });
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
-                      this.tx = transactionHash;
+                      this.tx = transactionHash.transactionHash;
                     });
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
@@ -204,6 +206,10 @@
             },
             async changeInfoNode() {
                 this.$store.commit('SHOW_SPINNER');
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
                 let localweb3 = {};
                 if (this.$store.state.user.unlockType == 'keystore') {
                     localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
@@ -212,10 +218,6 @@
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
                 }
-
-                const contractAdr = this.$store.state.contracts.contractAddress;
-                const address = this.$store.state.user.address;
-                const abi = this.$store.state.contracts.ABI;
 
                 let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
@@ -241,36 +243,37 @@
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
+
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
-
                     let raw = "0x" + serializedTx.toString("hex");
-
-                    localweb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {
-                      // console.log('error:');
-                      // console.log(err);
-                      // console.log('TX:');
-                      // console.log(transactionHash);
-                        if (transactionHash) {
-                            this.tx = transactionHash;
-                        }
-                        this.$store.commit('HIDE_SPINNER');
-                    });
+                    let transaction = await localweb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                    this.tx = transaction.transactionHash;
+                    this.$store.commit('HIDE_SPINNER');
                 } else if (this.$store.state.user.unlockType == 'metamask') {
-                    localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
-                      this.tx = transactionHash;
-                    });
+                    let transaction = await localweb3.eth.sendTransaction(txParams, () => {});
+                    this.tx = transaction.transactionHash;
+                    this.$store.commit('HIDE_SPINNER');
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
                 }
             },
             async getInfoNode() {
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+                let localweb3;
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
+                    localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    if (typeof web3 !== 'undefined') {
+                        localweb3 = new Web3(window.web3.currentProvider);
+                    } else{
+                       console.log('MetaMask is not installed')
+                    }
+                }
+                if (typeof localweb3 != 'undefined') {
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                     try {
                         let result = await  nodeContract.methods.getInfoNode(address).call();
@@ -288,30 +291,6 @@
                         return result;
                     } catch (e) {
                         return false;
-                    }
-                } else if (this.$store.state.user.unlockType == 'metamask') {
-                    if (typeof web3 !== 'undefined') {
-                       //check that metaMask is installed
-
-                        const localWeb3 = new Web3(window.web3.currentProvider);
-
-                        localWeb3.eth.getAccounts().then(account => {
-                           let address = account[0];
-                           const abi = this.$store.state.contracts.ABI;
-                           const contractAdr = this.$store.state.contracts.contractAddress;
-
-                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
-
-                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
-                              console.log('error:');
-                              console.log(err);
-                              console.log('res:');
-                              console.log(result);
-                            });
-                        });
-
-                    } else{
-                       console.log('MetaMask is not installed')
                     }
                 }
             },
@@ -356,11 +335,33 @@
                        console.log('MetaMask is not installed')
                     }
                 }
+            },
+            async getUserIP() {
+                try {
+                    const response = await axios.get('https://api.ipify.org');
+                    return response.data;
+                } catch (error) {
+                    console.error(error);
+                    return '';
+                }
+            },
+            async getUserCoordinates(ip){
+                try {
+                    const response = await axios.get('https://api.ipdata.co/'+ ip +'?api-key=7764eb07cd516b7bada22f6cd7f190c61314bcf398838fd53379b44a');
+                    let lat = response.data.latitude;
+                    let long = response.data.longitude;
+                    return lat + ':' + long;
+                } catch (error) {
+                    console.error(error);
+                    return '';
+                }
             }
         },
         mounted: async function () {
             this.$store.commit('SHOW_SPINNER');
             let nodeInfo = await this.getInfoNode();
+            this.ip = await this.getUserIP();
+            this.coordinates = await this.getUserCoordinates(this.ip);
             this.$store.commit('HIDE_SPINNER');
         },
     }

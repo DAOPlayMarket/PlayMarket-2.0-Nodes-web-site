@@ -37,7 +37,14 @@
             </a>
         </div>
         <div>
-            <div v-if="!nodeConfirmation" class="deposit">
+            <div class="action-header">
+                <ul>
+                    <li :class="{blocked: nodeConfirmation, active: depositCollapsed}" @click="selectAction('deposit')">Deposit</li>
+                    <li :class="{blocked: pmtDeposit == 0 || ethDeposit == 0, active: refundCollapsed}" @click="selectAction('refund')">Refund</li>
+                    <li :class="{blocked: this.collectBalance == 0, active: collectCollapsed}" @click="selectAction('collect')">Collect</li>
+                </ul>
+            </div>
+            <div v-if="!nodeConfirmation && depositCollapsed" class="action-box deposit">
                 <div class="info">
                     <p>
                         The cost of registering nodes {{ pmtMin }} PMT, in addition, you must make a deposit of {{ ethMin }} ETH for its needs. To continue, make sure that your wallet ETH has enough PMT tokens to register the node.
@@ -76,7 +83,7 @@
                     </div>
                 </div>
             </div>
-            <div v-if="pmtDeposit != 0 || ethDeposit != 0" class="refund">
+            <div v-if="(pmtDeposit != 0 || ethDeposit != 0) && refundCollapsed" class="action-box refund">
                 <h2>
                 <!--<h2 @click="refundCollapsed = !refundCollapsed">-->
                     Request refund
@@ -106,7 +113,7 @@
                     </div>
                 </div>
             </div>
-            <div v-if="this.collectBalance != 0" class="collect">
+            <div v-if="this.collectBalance != 0 && collectCollapsed" class="action-box collect">
                 <p>
                     Collect your amount
                 </p>
@@ -162,253 +169,297 @@
                 pmtRefund: 0,
                 ethDeposit: 0,
                 ethRefund: 0,
-                refundCollapsed: true,
+                refundCollapsed: false,
                 depositCollapsed: true,
-                tx: ''
+                collectCollapsed: false,
+                tx: '',
             }
         },
         methods: {
             async TokenApprove() {
+                this.$store.commit('SHOW_SPINNER');
+
+                const contractAdr = this.$store.state.contracts.contractPMT;
+                const address = this.$store.state.user.address;
+                const nodeStorage = this.$store.state.contracts.contractStorage;
+                // PMT ABI
+                const abi = [
+                   {
+                       "constant": false,
+                       "inputs": [
+                           { "name": "_spender", "type": "address" },
+                           { "name": "_value", "type": "uint256" }
+                       ],
+                       "name": "approve",
+                       "outputs": [
+                           { "name": "success", "type": "bool" }
+                       ],
+                       "payable": false,
+                       "stateMutability": "nonpayable",
+                       "type": "function"
+                   },
+                   {
+                       "constant": true,
+                       "inputs": [
+                           { "name": "_owner", "type": "address" },
+                           { "name": "_spender", "type": "address" }
+                       ],
+                       "name": "allowance",
+                       "outputs": [
+                           { "name": "", "type": "uint256", "value": "0" }
+                       ],
+                       "payable": false,
+                       "stateMutability": "view",
+                       "type": "function"
+                   },
+                ];
+
+                let localWeb3 = {};
+
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    // transaction.sign(this.$store.state.user.wallet.privateKey)
-                    //send signed transaction to PM service
-                    // .....some code
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractPMT;
-                    const address = this.$store.state.user.address;
-                    // PMT ABI
-                    const abi = [
-                       {
-                           "constant": false,
-                           "inputs": [
-                               { "name": "_spender", "type": "address" },
-                               { "name": "_value", "type": "uint256" }
-                           ],
-                           "name": "approve",
-                           "outputs": [
-                               { "name": "success", "type": "bool" }
-                           ],
-                           "payable": false,
-                           "stateMutability": "nonpayable",
-                           "type": "function"
-                       },
-                       {
-                           "constant": true,
-                           "inputs": [
-                               { "name": "_owner", "type": "address" },
-                               { "name": "_spender", "type": "address" }
-                           ],
-                           "name": "allowance",
-                           "outputs": [
-                               { "name": "", "type": "uint256", "value": "0" }
-                           ],
-                           "payable": false,
-                           "stateMutability": "view",
-                           "type": "function"
-                       },
-                    ];
-                    //add getter/setter
-                    let nodeStorage = this.$store.state.contracts.contractStorage;
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                    let txData = nodeContract.methods.approve(nodeStorage, this.pmtVal * 10000).encodeABI();
-                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
-                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                        from: address,
-                        to: contractAdr,
-                        data: txData,
-                        value: localweb3.utils.toHex(0)
-                    }) + 100000);
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    let txParams = {
-                        nonce: localweb3.utils.toHex(nonce),
-                        gasPrice: gasPrice,
-                        gasLimit: gasLimit,
-                        value: '0x00',
-                        to: contractAdr,
-                        data: txData,
-                        chainId: 4
-                    };
+                }
 
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.approve(nodeStorage, this.pmtVal * 10000).encodeABI();
+                let nonce = await localWeb3.eth.getTransactionCount(address, "pending");
+                let gasPrice = await localWeb3.utils.toHex(await localWeb3.eth.getGasPrice());
+                let gasLimit = await localWeb3.utils.toHex(await localWeb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                    value: localWeb3.utils.toHex(0)
+                }) + 100000);
+
+                let txParams = {
+                    from: address,
+                    nonce: localWeb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: '0x00',
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
-
                     let raw = "0x" + serializedTx.toString("hex");
-
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      this.tx = transactionHash;
-                    });
+                    let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                    this.tx = transaction.transactionHash;
                 } else if (this.$store.state.user.unlockType == 'metamask') {
-                    // web3.eth.sendTransaction(transaction, (error, result) => {
-                    //
-                    // })
+                    let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                    this.tx = transaction.transactionHash;
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
                 }
-
+                this.$store.commit('HIDE_SPINNER');
             },
             async tokenAllowance() {
+                const contractAdr = this.$store.state.contracts.contractPMT;
+                const nodeStorage = this.$store.state.contracts.contractStorage;
+                const address = this.$store.state.user.address;
+                // PMT ABI
+                const abi = [
+                   {
+                       "constant": false,
+                       "inputs": [
+                           { "name": "_spender", "type": "address" },
+                           { "name": "_value", "type": "uint256" }
+                       ],
+                       "name": "approve",
+                       "outputs": [
+                           { "name": "success", "type": "bool" }
+                       ],
+                       "payable": false,
+                       "stateMutability": "nonpayable",
+                       "type": "function"
+                   },
+                   {
+                       "constant": true,
+                       "inputs": [
+                           { "name": "_owner", "type": "address" },
+                           { "name": "_spender", "type": "address" }
+                       ],
+                       "name": "allowance",
+                       "outputs": [
+                           { "name": "", "type": "uint256", "value": "0" }
+                       ],
+                       "payable": false,
+                       "stateMutability": "view",
+                       "type": "function"
+                   },
+                ];
+
+                let localWeb3;
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractPMT;
-                    const nodeStorage = this.$store.state.contracts.contractStorage;
-                    const address = this.$store.state.user.address;
-                    // PMT ABI
-                    const abi = [
-                       {
-                           "constant": false,
-                           "inputs": [
-                               { "name": "_spender", "type": "address" },
-                               { "name": "_value", "type": "uint256" }
-                           ],
-                           "name": "approve",
-                           "outputs": [
-                               { "name": "success", "type": "bool" }
-                           ],
-                           "payable": false,
-                           "stateMutability": "nonpayable",
-                           "type": "function"
-                       },
-                       {
-                           "constant": true,
-                           "inputs": [
-                               { "name": "_owner", "type": "address" },
-                               { "name": "_spender", "type": "address" }
-                           ],
-                           "name": "allowance",
-                           "outputs": [
-                               { "name": "", "type": "uint256", "value": "0" }
-                           ],
-                           "payable": false,
-                           "stateMutability": "view",
-                           "type": "function"
-                       },
-                    ];
-                    console.log(nodeStorage);
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                    return nodeContract.methods.allowance(address, nodeStorage).call((err, result) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 } else if (this.$store.state.user.unlockType == 'metamask') {
-                    return 0;
+                    localWeb3 = new Web3(window.web3.currentProvider);
                 } else if (this.$store.state.user.unlockType == 'ledger') {
-                    return 0;
-                } else {
-                    return 0;
+
                 }
+
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+                return nodeContract.methods.allowance(address, nodeStorage).call((err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
             },
             async sendPmt() {
-                if (true) {
-                    // if token transfer approve
-                    // this.$router.push({ path: `/registration/3` })
-                }
+                this.$store.commit('SHOW_SPINNER');
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+                let localWeb3 = {};
+
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                    let txData = nodeContract.methods.makeDeposit(address, this.pmtApprove).encodeABI();
-                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
-                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                        from: address,
-                        to: contractAdr,
-                        data: txData,
-                        value: localweb3.utils.toHex(localweb3.utils.toWei(String(this.ethVal)))
-                    }) + 100000);
+                }
 
-                    let txParams = {
-                        nonce: localweb3.utils.toHex(nonce),
-                        gasPrice: gasPrice,
-                        gasLimit: gasLimit,
-                        value: localweb3.utils.toHex(localweb3.utils.toWei(String(this.ethVal))),
-                        to: contractAdr,
-                        data: txData,
-                        chainId: 4
-                    };
-                    console.log(txParams);
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.makeDeposit(address, this.pmtApprove).encodeABI();
+                let nonce = await localWeb3.eth.getTransactionCount(address, "pending");
+                let gasPrice = await localWeb3.utils.toHex(await localWeb3.eth.getGasPrice());
+                let gasLimit = await localWeb3.utils.toHex(await localWeb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                    value: localWeb3.utils.toHex(localWeb3.utils.toWei(String(this.ethVal)))
+                }) + 100000);
 
+                let txParams = {
+                    from: address,
+                    nonce: localWeb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: localWeb3.utils.toHex(localWeb3.utils.toWei(String(this.ethVal))),
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
                     try {
-                        let transactionHash = await localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {});
-                        this.tx = transactionHash;
+                        let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
                     } catch (e) {
                         console.log(e);
                     }
-                      // console.log('error:');
-                      // console.log(err);
-                      // console.log('TX:');
-                      // console.log(transactionHash);
                 } else if (this.$store.state.user.unlockType == 'metamask') {
-                    // web3.eth.sendTransaction(transaction, (error, result) => {
-                    //
-                    // })
+                    try {
+                        let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
                 }
+                this.$store.commit('HIDE_SPINNER');
             },
             async sendETH() {
-              const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
+                this.$store.commit('SHOW_SPINNER');
 
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                    let txData = nodeContract.methods.makeDepositETH(address).encodeABI();
-                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
-                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                        from: address,
-                        to: contractAdr,
-                        data: txData,
-                        value: localweb3.utils.toHex(String(localweb3.utils.toWei(String(9))))
-                    }) + 100000);
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
 
-                    let txParams = {
-                        nonce: localweb3.utils.toHex(nonce),
-                        gasPrice: gasPrice,
-                        gasLimit: gasLimit,
-                        value: localweb3.utils.toHex(String(localweb3.utils.toWei(String(9)))),
-                        to: contractAdr,
-                        data: txData,
-                        chainId: 4
-                    };
+                let localWeb3 = {};
 
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
+                }
+
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.makeDepositETH(address).encodeABI();
+                let nonce = await localWeb3.eth.getTransactionCount(address, "pending");
+                let gasPrice = await localWeb3.utils.toHex(await localWeb3.eth.getGasPrice());
+                let gasLimit = await localWeb3.utils.toHex(await localWeb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                    value: localWeb3.utils.toHex(String(localWeb3.utils.toWei(String(9))))
+                }) + 100000);
+
+                let txParams = {
+                    from: address,
+                    nonce: localWeb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: localWeb3.utils.toHex(String(localWeb3.utils.toWei(String(9)))),
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
+                    try {
+                        let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    try {
+                        let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      console.log('error:');
-                      console.log(err);
-                      console.log('TX:');
-                      console.log(transactionHash);
-                    });
+                }
+                this.$store.commit('HIDE_SPINNER');
             },
             async getDepositNode() {
                 const abi = this.$store.state.contracts.ABI;
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
 
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                let localWeb3 = {};
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
+                }
+
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
 
                 try {
                     let result = await nodeContract.methods.getDepositNode(address).call();
-                    this.ethDeposit = localweb3.utils.fromWei(result['ETH'], 'ether');
+                    this.ethDeposit = localWeb3.utils.fromWei(result['ETH'], 'ether');
                     this.pmtDeposit = result['PMT'] / 10000;
-                    this.ethMin = localweb3.utils.fromWei(result['minETH'], 'ether');
+                    this.ethMin = localWeb3.utils.fromWei(result['minETH'], 'ether');
                     this.pmtMin = result['minPMT'] / 10000;
                     this.refundStatus = result['refundState'];
                     this.refundTimestamp = result['refundTime'];
@@ -420,12 +471,20 @@
             },
             async getRevenueNode() {
                 const abi = this.$store.state.contracts.ABI;
-
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
 
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                let localWeb3 = {};
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
+                }
+
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
 
                 try {
                     let amount = await nodeContract.methods.getRevenueNode(address).call();
@@ -435,177 +494,269 @@
                 }
             },
             async requestRefund() {
+                this.$store.commit('SHOW_SPINNER');
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+
+                let localWeb3 = {};
+
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                }
 
-                    let txData = nodeContract.methods.requestRefund(localweb3.utils.toWei(String(this.ethRefund)), String(this.pmtRefund*10000)).encodeABI();
-                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
-                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                        from: address,
-                        to: contractAdr,
-                        value: '0x00',
-                        data: txData,
-                    }));
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.requestRefund(localWeb3.utils.toWei(String(this.ethRefund)), String(this.pmtRefund*10000)).encodeABI();
+                let gasPrice = await localWeb3.utils.toHex((await localWeb3.eth.getGasPrice()));
+                let gasLimit = await localWeb3.utils.toHex(await localWeb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    value: '0x00',
+                    data: txData,
+                }));
 
-                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let txParams = {
-                        nonce: localweb3.utils.toHex(nonce),
-                        gasPrice: gasPrice,
-                        gasLimit: gasLimit,
-                        value: '0x00',
-                        to: contractAdr,
-                        data: txData,
-                        chainId: 4
-                    };
+                let nonce = await localWeb3.eth.getTransactionCount(address, "pending");
+                let txParams = {
+                    from: address,
+                    nonce: localWeb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: '0x00',
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
 
+                if (this.$store.state.user.unlockType == 'keystore') {
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
-
                     let raw = "0x" + serializedTx.toString("hex");
-                    let transactionHash = await localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {});
-                    this.tx = transactionHash.logs.transactionHash;
+                    try {
+                        let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    try {
+                        let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
                 }
+                this.$store.commit('HIDE_SPINNER');
             },
             async refund() {
+                this.$store.commit('SHOW_SPINNER');
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+
+                let localWeb3 = {};
+
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                }
 
-                    let txData = nodeContract.methods.refund().encodeABI();
-                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
-                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                        from: address,
-                        to: contractAdr,
-                        data: txData,
-                        value: '0x00'
-                    }));
-                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let txParams = {
-                        nonce: localweb3.utils.toHex(nonce),
-                        gasPrice: gasPrice,
-                        gasLimit: gasLimit,
-                        value: '0x00',
-                        to: contractAdr,
-                        data: txData,
-                        chainId: 4
-                    };
-                    console.log(txParams);
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
 
+                let txData = nodeContract.methods.refund().encodeABI();
+                let gasPrice = await localWeb3.utils.toHex((await localWeb3.eth.getGasPrice()));
+                let gasLimit = await localWeb3.utils.toHex(await localWeb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                    value: '0x00'
+                }));
+                let nonce = await localWeb3.eth.getTransactionCount(address, "pending");
+                let txParams = {
+                    from: address,
+                    nonce: localWeb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: '0x00',
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
                     try {
-                        let transactionHash = await localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {});
-                        this.tx = transactionHash.logs.transactionHash;
+                        let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
                     } catch (e) {
-
+                        console.log(e);
                     }
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      this.tx = transactionHash;
-                    });
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    try {
+                        let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+
                 }
+                this.$store.commit('HIDE_SPINNER');
             },
             async requestCollectNode() {
+                this.$store.commit('SHOW_SPINNER');
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+
+                let localWeb3 = {};
+
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                }
 
-                    let txData = nodeContract.methods.requestCollectNode().encodeABI();
-                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
-                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                        from: address,
-                        to: contractAdr,
-                        data: txData,
-                    }));
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.requestCollectNode().encodeABI();
+                let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
+                let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                }));
 
-                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let txParams = {
-                        nonce: localweb3.utils.toHex(nonce),
-                        gasPrice: gasPrice,
-                        gasLimit: gasLimit,
-                        value: '0x00',
-                        to: contractAdr,
-                        data: txData,
-                        chainId: 4
-                    };
+                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                let txParams = {
+                    from: address,
+                    nonce: localweb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: '0x00',
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
 
+                if (this.$store.state.user.unlockType == 'keystore') {
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
-
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      this.tx = transactionHash;
-                    });
+                    try {
+                        let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    try {
+                        let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'ledger') {
                 }
+                this.$store.commit('HIDE_SPINNER');
             },
             async collectNode() {
+                this.$store.commit('SHOW_SPINNER');
+
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+
+                let localWeb3 = {};
+
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
-                    const nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    let txData = nodeContract.methods.collectNode().encodeABI();
-                    let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
+                }
 
-                    let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                        from: address,
-                        to: contractAdr,
-                        data: txData,
-                    }));
+                const nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                let txData = nodeContract.methods.collectNode().encodeABI();
+                let gasPrice = await localweb3.utils.toHex((await localweb3.eth.getGasPrice()));
 
-                    let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                    let txParams = {
-                        nonce: localweb3.utils.toHex(nonce),
-                        gasPrice: gasPrice,
-                        gasLimit: gasLimit,
-                        to: contractAdr,
-                        data: txData,
-                        chainId: 4
-                    };
+                let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
+                    from: address,
+                    to: contractAdr,
+                    data: txData,
+                }));
 
+                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
+                let txParams = {
+                    from: address,
+                    nonce: localweb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    to: contractAdr,
+                    data: txData,
+                    chainId: 4
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
 
                     let raw = "0x" + serializedTx.toString("hex");
+                    try {
+                        let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    try {
+                        let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                        this.tx = transaction.transactionHash;
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      this.tx = transactionHash;
-                    });
                 }
+                this.$store.commit('HIDE_SPINNER');
             },
             async getNodeStorage() {
                 const abi = this.$store.state.contracts.ABI;
-
-                const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 const contractAdr = this.$store.state.contracts.contractAddress;
-                const address = this.$store.state.user.address;
+                let localWeb3 = {};
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
+                }
+
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
 
                 try {
                    let storge = await nodeContract.methods.NodeStorage().call();
-                   console.log(storge)
                    this.$store.commit('SET_NODE_STORAGE',
                         {
                             storage: storge,
@@ -617,82 +768,67 @@
                 }
             },
             async getInfoNode() {
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                const abi = this.$store.state.contracts.ABI;
+                let localWeb3;
+
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-                    const abi = this.$store.state.contracts.ABI;
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
-                    return nodeContract.methods.getInfoNode(address).call((err, result) => {
-                        // console.log(result)
-                    });
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 } else if (this.$store.state.user.unlockType == 'metamask') {
-                    if (typeof web3 !== 'undefined') {
-                       //check that metaMask is installed
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                        const localWeb3 = new Web3(window.web3.currentProvider);
-
-                        localWeb3.eth.getAccounts().then(account => {
-                           let address = account[0];
-                           const abi = this.$store.state.contracts.ABI;
-                           const contractAdr = this.$store.state.contracts.contractAddress;
-
-                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
-
-                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
-                              // console.log('error:');
-                              // console.log(err);
-                              // console.log('res:');
-                              // console.log(result);
-                            });
-                        });
-
-                    } else{
-                       console.log('MetaMask is not installed')
-                    }
                 }
+
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+
+                return nodeContract.methods.getInfoNode(address).call((err, result) => {});
             },
             async getConfirmationNode() {
                 const abi = this.$store.state.contracts.ABI;
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                let localWeb3 = {};
 
                 if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
-                    return nodeContract.methods.getConfirmationNode(address).call((err, result) => {
-                      if (typeof result != 'undefined') {
-                          this.nodeConfirmation = result;
-                      }
-
-                    });
+                    localWeb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 } else if (this.$store.state.user.unlockType == 'metamask') {
-                    if (typeof web3 !== 'undefined') {
-                       //check that metaMask is installed
+                    localWeb3 = new Web3(window.web3.currentProvider);
+                } else if (this.$store.state.user.unlockType == 'ledger') {
 
-                        const localWeb3 = new Web3(window.web3.currentProvider);
+                }
 
-                        localWeb3.eth.getAccounts().then(account => {
-                           let address = account[0];
-                           const abi = this.$store.state.contracts.ABI;
-                           const contractAdr = this.$store.state.contracts.contractAddress;
-
-                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
-
-                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
-                              // console.log('error:');
-                              // console.log(err);
-                              // console.log('res:');
-                              // console.log(result);
-                            });
-                        });
-
-                    } else{
-                       console.log('MetaMask is not installed')
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+                return nodeContract.methods.getConfirmationNode(address).call((err, result) => {
+                    if (typeof result != 'undefined') {
+                        this.nodeConfirmation = result;
                     }
+                });
+            },
+            selectAction(action) {
+                switch (action) {
+                    case 'deposit':
+                        if (!this.nodeConfirmation) {
+                            this.depositCollapsed = true;
+                            this.refundCollapsed = false;
+                            this.collectCollapsed = false;
+                        }
+                        break;
+                    case 'refund':
+                        if (this.pmtDeposit != 0 || this.ethDeposit != 0) {
+                            this.depositCollapsed = false;
+                            this.refundCollapsed = true;
+                            this.collectCollapsed = true;
+                        }
+                        break;
+                    case 'collect':
+                        if (this.collectBalance != 0) {
+                            this.depositCollapsed = false;
+                            this.refundCollapsed = false;
+                            this.collectCollapsed = true;
+                        }
+                        break;
                 }
             }
         },
@@ -718,7 +854,7 @@
         mounted: async function () {
             this.$store.commit('SHOW_SPINNER');
             const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-            // let balance = await this.getBalance(this.$store.state.user.address);
+
             await this.getNodeStorage();
             let nodeInfo = await this.getInfoNode();
             this.collectStatus = nodeInfo[1];
@@ -730,7 +866,7 @@
 
             // await this.requestRefund();
             let depo = await this.getDepositNode();
-            console.log(depo)
+
             this.collectBalance = await this.getRevenueNode();
 
             if (this.pmtApprove < this.pmtMin && this.pmtDeposit < this.pmtMin && this.pmtDeposit + this.pmtApprove < this.pmtMin) {
@@ -766,6 +902,11 @@
             letter-spacing: 0.2px
             text-align: left
             color: #67777b
+        .transaction
+            padding-top: 10px
+            padding-bottom: 10px
+            p
+                font-weight: 600
         .steps
             position: relative
             display: flex
@@ -825,6 +966,31 @@
                     width: 100%
                     left: -15px
 
+        .action-header
+            ul
+                display: flex
+                text-transform: uppercase
+                li
+                    padding: 10px
+                    margin-right: 15px
+                    display: flex
+                    justify-content: center
+                    background-color: #00e7d5
+                    border-radius: 22.5px
+                    font-size: 16px
+                    font-weight: bold
+                    color: #fff
+                    cursor: pointer
+                    opacity: .3
+                    &.active
+                        opacity: 1
+                    &.blocked
+                        opacity: .4
+                        cursor: not-allowed
+                        background-color: #c6c6c6
+        .action-box
+            width: 500px
+            padding-top: 25px
         .refund
             h2
                 font-size: 24px

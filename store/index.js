@@ -1768,7 +1768,7 @@ export default new Vuex.Store({
             contractStorage: '',
             web3provider: 'wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'
         },
-		etherscan: 'https://rinkeby.etherscan.io/'
+		etherscan: 'https://rinkeby.etherscan.io'
     },
     mutations: {
         UPDATE_SEARCH_KEY(state, searchKey) {

@@ -39,13 +39,13 @@
                     </span>
                     <span class="checkmark"></span>
                 </li>
-                <!--<li>-->
-                    <!--<input type="radio" name="unlockType" v-model="unlockType" value="metamask">-->
-                    <!--<span class="text-wrap">-->
-                        <!--<p>Metamask service</p>-->
-                    <!--</span>-->
-                    <!--<span class="checkmark"></span>-->
-                <!--</li>-->
+                <li>
+                    <input type="radio" name="unlockType" v-model="unlockType" value="metamask">
+                    <span class="text-wrap">
+                        <p>Metamask service</p>
+                    </span>
+                    <span class="checkmark"></span>
+                </li>
                 <!--<li>-->
                     <!--<input type="radio" name="unlockType" v-model="unlockType" value="ledger">-->
                     <!--<span class="text-wrap">-->
@@ -172,10 +172,32 @@
                 }
             },
             async loginMetamask() {
-                if (typeof web3 !== 'undefined') {
-                   //check that metaMask is installed
-                    const localWeb3 = new Web3(window.web3.currentProvider);
-                    localWeb3.eth.getAccounts().then(account => {
+                let localWeb3 = {};
+                if (window.ethereum) {
+                    localWeb3 = new Web3(ethereum);
+                    try {
+                        await ethereum.enable();
+                        localWeb3.eth.getAccounts().then(account => {
+                            let address = account[0];
+                            if (typeof address !== 'undefined') {
+                                this.$store.commit('SET_IS_USER_AUTHENTICATED',
+                                    {
+                                        isAuth: true,
+                                        address: address,
+                                        type: 'metamask'
+                                    }
+                                );
+                                this.$router.push({ path: `/registration/2` })
+                            } else {
+                                //user is not auth in metamask
+                            }
+                        });
+                    } catch (error) {
+
+                    }
+                } else if (window.web3) {
+                   localWeb3 = new Web3(web3.currentProvider);
+                   localWeb3.eth.getAccounts().then(account => {
                         let address = account[0];
                         if (typeof address !== 'undefined') {
                             this.$store.commit('SET_IS_USER_AUTHENTICATED',
