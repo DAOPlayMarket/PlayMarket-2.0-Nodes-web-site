@@ -1,6 +1,6 @@
 <template>
     <header id="header">
-        <router-link to="/" id="logo"><span class="logo_text">DAO Playmarket 2.0</span></router-link>
+        <router-link to="/" id="logo"><span class="logo_text">DAO PlayMarket 2.0</span></router-link>
         <!--<div class="links">-->
             <!--<div class="icon-bell"></div>-->
             <!--<div id="auth">-->

@@ -396,15 +396,17 @@
         .btn
             display: flex
             justify-content: center
+            align-items: center
+            font-family: Archive
             background-color: #00e7d5
             border: 2px solid #00e7d5
-            box-shadow: 0px 4px 5px 0 rgba(0, 231, 213, 0.6)
+            box-shadow: 0px 4px 5px 0 rgba(0, 231, 213, 0.3)
             color: #fff
             padding: 8px 20px
             border-radius: 22.5px
             font-size: 20px
-            font-weight: bold
             cursor: pointer
+            text-transform: uppercase
         input[type=file]
             font-size: 100px
             position: absolute
@@ -460,4 +462,5 @@
         font-size: 17px
         color: #ffffff
         font-weight: bold
+        text-transform: uppercase
 </style>

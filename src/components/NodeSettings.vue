@@ -38,7 +38,7 @@
         </div>
         <div v-if="!regStatus" class="info">
             <p>
-                Configuring the node includes sending ETH(deposit), IPFS hash, hashTag, IP and coordinates of the node.
+                Configuring the node includes sending ETH(deposit), IPFS hash, hashType, IP and coordinates of the node.
             </p>
             <div class="form-input">
                 IP
@@ -50,30 +50,19 @@
             </div>
             <div class="form-input">
                 hashType
-                <input type="text" v-model="this.hashType" disabled>
+                <div class="select-box">
+                    <div class="selected-item" :class="{'selected-item--open' : hashSelectShow}" @click="hashSelectShow = !hashSelectShow">
+                        {{hashType + ' - ' + hashTag}}
+                    </div>
+                    <ul v-show="hashSelectShow">
+                        <li @click="setHashType('IPFS',1)">1 - IPFS</li>
+                    </ul>
+                </div>
             </div>
-            <!--<span>-->
-                <!--From:-->
-                <!--<p class="values">-->
-                    <!--{{ $store.state.user.address }}-->
-                <!--</p>-->
-            <!--</span>-->
-            <!--<span>-->
-                <!--To:-->
-                <!--<p class="values">-->
-                    <!--{{ $store.state.contracts.contractAddress }}-->
-                <!--</p>-->
-            <!--</span>-->
             <div class="form-input">
                 Node coordinates
                 <input type="text" v-model="coordinates">
             </div>
-            <!--<span>-->
-                <!--Value:-->
-                <!--<p class="values">-->
-                    <!--10 ETH-->
-                <!--</p>-->
-            <!--</span>-->
             <div class="settings-btn-wrapper" @click="addNode()">
             <button class="btn">
                 <img src="../assets/images/icon-config.png" alt="">
@@ -98,7 +87,14 @@
             </div>
             <div class="form-input">
                 HashType
-                <input type="text" v-model="this.hashType" disabled>
+                <div class="select-box">
+                    <div class="selected-item" :class="{'selected-item--open' : hashSelectShow}" @click="hashSelectShow = !hashSelectShow">
+                        {{hashType + ' - ' + hashTag}}
+                    </div>
+                    <ul v-show="hashSelectShow">
+                        <li @click="setHashType('IPFS',1)">1 - IPFS</li>
+                    </ul>
+                </div>
             </div>
 
             <div class="form-input">
@@ -143,7 +139,8 @@
                 hash: '',
                 hashPl: 'QmVtYjNij3KeyGmcgg7yVXWskLaBtov3UYL9pgcGK3MCWu',
                 ip: '192.168.1.1',
-                coordinates: '109.194:37.82'
+                coordinates: '109.194:37.82',
+                hashSelectShow: false,
             }
         },
         methods: {
@@ -355,6 +352,11 @@
                     console.error(error);
                     return '';
                 }
+            },
+            setHashType(tag,type) {
+                this.hashTag = tag;
+                this.hashType = type;
+                this.hashSelectShow = false;
             }
         },
         mounted: async function () {
@@ -479,15 +481,17 @@
         .btn
             display: flex
             justify-content: center
+            align-items: center
+            font-family: Archive
             background-color: #00e7d5
             border: 2px solid #00e7d5
-            box-shadow: 0px 4px 5px 0 rgba(0, 231, 213, 0.6)
+            box-shadow: 0px 4px 5px 0 rgba(0, 231, 213, 0.3)
             color: #fff
             padding: 8px 20px
             border-radius: 22.5px
             font-size: 20px
-            font-weight: bold
             cursor: pointer
+            text-transform: uppercase
             img
                 margin-right: 10px
     .btn-back
@@ -499,4 +503,42 @@
         text-align: left
         color: #006f9e
         text-decoration: underline
+    .select-box
+        position: relative
+        cursor: pointer
+        .selected-item
+            border-radius: 25px
+            position: relative
+            height: 24px
+            width: 149px
+            padding: 5px 20px
+            background: #fff
+            display: flex
+            align-items: center
+            &:after
+                content: ''
+                position: absolute
+                top: 14px
+                right: 13px
+                width: 0
+                height: 0
+                border-style: solid
+                border-width: 8px 5px 0 5px
+                border-color: #00e7d5 transparent transparent transparent
+        .selected-item--open
+            &:after
+                border-color: transparent transparent #00e7d5 transparent
+                border-width: 0 5px 8px 5px
+
+        ul
+            position: absolute
+            top: 34px
+            left: 15px
+            border-top: 1px rgba(191, 191, 191, 0.1) solid
+            box-shadow: 0 5px 5px 0 rgba(191, 191, 191, 0.3)
+            li
+                height: 24px
+                width: 139px
+                padding: 5px 10px
+                background: #fff
 </style>
