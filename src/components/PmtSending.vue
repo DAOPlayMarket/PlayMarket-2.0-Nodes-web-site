@@ -243,7 +243,7 @@
                     value: '0x00',
                     to: contractAdr,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -348,7 +348,7 @@
                     value: localWeb3.utils.toHex(localWeb3.utils.toWei(String(this.ethVal))),
                     to: contractAdr,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -411,7 +411,7 @@
                     value: localWeb3.utils.toHex(String(localWeb3.utils.toWei(String(9)))),
                     to: contractAdr,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -529,7 +529,7 @@
                     value: '0x00',
                     to: contractAdr,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -591,7 +591,7 @@
                     value: '0x00',
                     to: contractAdr,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -653,7 +653,7 @@
                     value: '0x00',
                     to: contractAdr,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -714,7 +714,7 @@
                     gasLimit: gasLimit,
                     to: contractAdr,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {

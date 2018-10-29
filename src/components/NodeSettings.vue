@@ -127,6 +127,12 @@
     import ethTx from 'ethereumjs-tx'
     import axios from 'axios'
 
+    function getPosition() {
+        return new Promise((res, rej) => {
+            navigator.geolocation.getCurrentPosition(res, rej);
+        });
+    }
+
     export default {
         name: "node-settings",
         data() {
@@ -145,21 +151,11 @@
         },
         methods: {
             async addNode() {
-                //validate data
-                //send transaction
-                let localweb3 = {};
-                if (this.$store.state.user.unlockType == 'keystore') {
-                    localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                } else if (this.$store.state.user.unlockType == 'metamask') {
-                    localweb3 = new Web3(window.web3.currentProvider);
-                } else if (this.$store.state.user.unlockType == 'ledger') {
-
-                }
-
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
                 const abi = this.$store.state.contracts.ABI;
 
+                let localweb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
                 let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                 let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
@@ -179,7 +175,7 @@
                     to: contractAdr,
                     from: address,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -199,23 +195,13 @@
                 } else if (this.$store.state.user.unlockType == 'ledger') {
 
                 }
-                // this.$router.push({ path: `/registration/3` })
             },
             async changeInfoNode() {
                 this.$store.commit('SHOW_SPINNER');
-
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
                 const abi = this.$store.state.contracts.ABI;
-                let localweb3 = {};
-                if (this.$store.state.user.unlockType == 'keystore') {
-                    localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                } else if (this.$store.state.user.unlockType == 'metamask') {
-                    localweb3 = new Web3(window.web3.currentProvider);
-                } else if (this.$store.state.user.unlockType == 'ledger') {
-
-                }
-
+                let localweb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
                 let nonce = await localweb3.eth.getTransactionCount(address, "pending");
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                 let txData = nodeContract.methods.changeInfoNode(this.hash, this.hashType, this.ip, this.coordinates).encodeABI();
@@ -236,7 +222,7 @@
                     to: contractAdr,
                     from: address,
                     data: txData,
-                    chainId: 4
+                    chainId: 1
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -260,16 +246,7 @@
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
                 const abi = this.$store.state.contracts.ABI;
-                let localweb3;
-                if (this.$store.state.user.unlockType == 'keystore') {
-                    localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                } else if (this.$store.state.user.unlockType == 'metamask') {
-                    if (typeof web3 !== 'undefined') {
-                        localweb3 = new Web3(window.web3.currentProvider);
-                    } else{
-                       console.log('MetaMask is not installed')
-                    }
-                }
+                let localweb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
                 if (typeof localweb3 != 'undefined') {
                     let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
                     try {
@@ -293,77 +270,45 @@
             },
             async getConfirmationNode() {
                 const abi = this.$store.state.contracts.ABI;
+                const localweb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
+                const contractAdr = this.$store.state.contracts.contractAddress;
+                const address = this.$store.state.user.address;
+                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
 
-                if (this.$store.state.user.unlockType == 'keystore') {
-                    const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
-                    const contractAdr = this.$store.state.contracts.contractAddress;
-                    const address = this.$store.state.user.address;
-
-                    let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
-                    nodeContract.methods.getConfirmationNode(address).call((err, result) => {
-                      if (typeof result != 'undefined') {
-                          this.nodeConfirmation = result;
-                      }
-
-                    });
-                } else if (this.$store.state.user.unlockType == 'metamask') {
-                    if (typeof web3 !== 'undefined') {
-                       //check that metaMask is installed
-
-                        const localWeb3 = new Web3(window.web3.currentProvider);
-
-                        localWeb3.eth.getAccounts().then(account => {
-                           let address = account[0];
-                           const abi = this.$store.state.contracts.ABI;
-                           const contractAdr = this.$store.state.contracts.contractAddress;
-
-                           let nodeContract = new localWeb3.eth.Contract(abi, contractAdr, {from: address});
-
-                           nodeContract.methods.getInfoNode(address).call(function (err, result) {
-                              console.log('error:');
-                              console.log(err);
-                              console.log('res:');
-                              console.log(result);
-                            });
-                        });
-
-                    } else{
-                       console.log('MetaMask is not installed')
-                    }
-                }
+                nodeContract.methods.getConfirmationNode(address).call((err, result) => {
+                  if (typeof result != 'undefined') {
+                      this.nodeConfirmation = result;
+                  }
+                });
             },
-            async getUserIP() {
-                try {
-                    const response = await axios.get('https://api.ipify.org');
-                    return response.data;
-                } catch (error) {
-                    console.error(error);
-                    return '';
-                }
-            },
-            async getUserCoordinates(ip){
-                try {
-                    const response = await axios.get('https://api.ipdata.co/'+ ip +'?api-key=7764eb07cd516b7bada22f6cd7f190c61314bcf398838fd53379b44a');
-                    let lat = response.data.latitude;
-                    let long = response.data.longitude;
-                    return lat + ':' + long;
-                } catch (error) {
-                    console.error(error);
-                    return '';
-                }
+            async getUserCoordinates() {
+                let position = await getPosition();
+                return typeof position.coords !== 'undefined' ? position.coords.latitude + ':' + position.coords.longitude : '';
             },
             setHashType(tag,type) {
                 this.hashTag = tag;
                 this.hashType = type;
                 this.hashSelectShow = false;
-            }
+            },
+            getWeb3provider(unlockType) {
+                if (unlockType == 'keystore') {
+                    return new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider);
+                } else if (unlockType == 'metamask') {
+                    if (window.ethereum) {
+                        return ethereum;
+                    } else if (typeof web3 !== 'undefined') {
+                        return window.web3.currentProvider;
+                    } else {
+                        console.log('MetaMask is not installed')
+                        return false;
+                    }
+                }
+            },
         },
         mounted: async function () {
             this.$store.commit('SHOW_SPINNER');
             let nodeInfo = await this.getInfoNode();
-            this.ip = await this.getUserIP();
-            this.coordinates = await this.getUserCoordinates(this.ip);
+            this.coordinates = await this.getUserCoordinates();
             this.$store.commit('HIDE_SPINNER');
         },
     }
