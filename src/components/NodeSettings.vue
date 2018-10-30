@@ -126,6 +126,8 @@
     import Web3 from 'web3'
     import ethTx from 'ethereumjs-tx'
     import axios from 'axios'
+    import TransportU2F from "@ledgerhq/hw-transport-u2f"
+    import AppEth from "@ledgerhq/hw-app-eth"
 
     function getPosition() {
         return new Promise((res, rej) => {
@@ -151,6 +153,7 @@
         },
         methods: {
             async addNode() {
+                this.$store.commit('SHOW_SPINNER');
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
                 const abi = this.$store.state.contracts.ABI;
@@ -175,7 +178,7 @@
                     to: contractAdr,
                     from: address,
                     data: txData,
-                    chainId: 1
+                    chainId: this.$store.state.chainId
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
@@ -193,8 +196,23 @@
                       this.tx = transactionHash.transactionHash;
                     });
                 } else if (this.$store.state.user.unlockType == 'ledger') {
-
+                    txParams['v'] = "0x0" + this.$store.state.chainId;
+                    let tx = new ethTx(txParams);
+                    let serialized = tx.serialize().toString('hex');
+                    const transportU2F = await TransportU2F.create();
+                    const eth = new AppEth(transportU2F);
+                    //Подписываем транзакцию LEDGER
+                    let svr = await eth.signTransaction("44'/60'/0'/0/0", serialized);
+                    txParams['r'] = '0x' + svr.r;
+                    txParams['s'] = '0x' + svr.s;
+                    txParams['v'] = '0x' + svr.v;
+                    let txSigned = new ethTx(txParams);
+                    serialized = txSigned.serialize();
+                    let raw = "0x" + serialized.toString("hex");
+                    let txInfo = await localweb3.eth.sendSignedTransaction(raw, () => {});
+                    this.tx = txInfo.transactionHash;
                 }
+                this.$store.commit('HIDE_SPINNER');
             },
             async changeInfoNode() {
                 this.$store.commit('SHOW_SPINNER');
@@ -222,25 +240,37 @@
                     to: contractAdr,
                     from: address,
                     data: txData,
-                    chainId: 1
+                    chainId: this.$store.state.chainId
                 };
 
                 if (this.$store.state.user.unlockType == 'keystore') {
-
                     let tx = new ethTx(txParams);
                     tx.sign(this.$store.state.user.wallet._privKey);
                     let serializedTx = tx.serialize();
                     let raw = "0x" + serializedTx.toString("hex");
                     let transaction = await localweb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
                     this.tx = transaction.transactionHash;
-                    this.$store.commit('HIDE_SPINNER');
                 } else if (this.$store.state.user.unlockType == 'metamask') {
                     let transaction = await localweb3.eth.sendTransaction(txParams, () => {});
                     this.tx = transaction.transactionHash;
-                    this.$store.commit('HIDE_SPINNER');
                 } else if (this.$store.state.user.unlockType == 'ledger') {
-
+                    txParams['v'] = "0x0" + this.$store.state.chainId;
+                    let tx = new ethTx(txParams);
+                    let serialized = tx.serialize().toString('hex');
+                    const transportU2F = await TransportU2F.create();
+                    const eth = new AppEth(transportU2F);
+                    //Подписываем транзакцию LEDGER
+                    let svr = await eth.signTransaction("44'/60'/0'/0/0", serialized);
+                    txParams['r'] = '0x' + svr.r;
+                    txParams['s'] = '0x' + svr.s;
+                    txParams['v'] = '0x' + svr.v;
+                    let txSigned = new ethTx(txParams);
+                    serialized = txSigned.serialize();
+                    let raw = "0x" + serialized.toString("hex");
+                    let txInfo = await localweb3.eth.sendSignedTransaction(raw, () => {});
+                    this.tx = txInfo.transactionHash;
                 }
+                this.$store.commit('HIDE_SPINNER');
             },
             async getInfoNode() {
                 const contractAdr = this.$store.state.contracts.contractAddress;
@@ -282,7 +312,12 @@
                 });
             },
             async getUserCoordinates() {
-                let position = await getPosition();
+                let position = '';
+                try {
+                    position = await getPosition();
+                } catch(e) {
+                    console.log(e)
+                }
                 return typeof position.coords !== 'undefined' ? position.coords.latitude + ':' + position.coords.longitude : '';
             },
             setHashType(tag,type) {
@@ -291,7 +326,7 @@
                 this.hashSelectShow = false;
             },
             getWeb3provider(unlockType) {
-                if (unlockType == 'keystore') {
+                if (unlockType == 'keystore' || unlockType == 'ledger') {
                     return new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider);
                 } else if (unlockType == 'metamask') {
                     if (window.ethereum) {
@@ -304,12 +339,23 @@
                     }
                 }
             },
+            async getInfo() {
+                this.$store.commit('SHOW_SPINNER');
+                let nodeInfo = await this.getInfoNode();
+                this.coordinates = await this.getUserCoordinates();
+                this.$store.commit('HIDE_SPINNER');
+            }
         },
         mounted: async function () {
-            this.$store.commit('SHOW_SPINNER');
-            let nodeInfo = await this.getInfoNode();
-            this.coordinates = await this.getUserCoordinates();
-            this.$store.commit('HIDE_SPINNER');
+            if (!this.$store.state.user.isUserAuthenticated) {
+                this.$router.push({ path: `/registration/1` })
+            }
+            await this.getInfo();
+            let self = this;
+            let updater = setTimeout(async function tick() {
+                await self.getInfo();
+                updater = setTimeout(tick, 300*1000);
+            }, 300*1000);
         },
     }
 </script>

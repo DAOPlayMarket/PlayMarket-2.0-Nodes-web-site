@@ -46,13 +46,13 @@
                     </span>
                     <span class="checkmark"></span>
                 </li>
-                <!--<li>-->
-                    <!--<input type="radio" name="unlockType" v-model="unlockType" value="ledger">-->
-                    <!--<span class="text-wrap">-->
-                        <!--<p>Ledger keystore</p>-->
-                    <!--</span>-->
-                    <!--<span class="checkmark"></span>-->
-                <!--</li>-->
+                <li>
+                    <input type="radio" name="unlockType" v-model="unlockType" value="ledger">
+                    <span class="text-wrap">
+                        <p>Ledger keystore</p>
+                    </span>
+                    <span class="checkmark"></span>
+                </li>
             </ul>
 
             <div class="info">
@@ -62,9 +62,6 @@
             </div>
             <div v-if="this.unlockType == 'metamask'" class="upload-btn-wrapper">
                 <button class="btn" @click="loginMetamask()">
-                    <!--<svg xmlns="http://www.w3.org/2000/svg" width="31" height="28" style="padding-right: 18px">-->
-                        <!--<path fill="#FBFAFC" fill-rule="evenodd" d="M30.301 2.206c0-.444-.168-.849-.485-1.173a1.597 1.597 0 0 0-1.152-.486H2.356c-.439 0-.838.169-1.153.489-.316.32-.483.724-.483 1.17v21.141c0 .479.163.908.47 1.242.318.348.72.531 1.166.531h7.814c.439 0 .838-.17 1.154-.49.315-.32.483-.724.483-1.17 0-.443-.168-.848-.485-1.172a1.599 1.599 0 0 0-1.152-.486H4.049V8.993h22.923v12.809h-6.009c-.439 0-.838.169-1.154.489-.316.32-.482.724-.482 1.169 0 .447.165.851.48 1.169.316.321.716.491 1.156.491h7.701a1.55 1.55 0 0 0 1.164-.529c.309-.337.473-.767.473-1.244V2.206zM6.341 4.327V5.96H4.049V3.921H6.341v.406zm5.004 0V5.96H9.052V3.921h2.293v.406zm5.002 0V5.96H14.055V3.921H16.347v.406zm10.625 0V5.96H19.058V3.921H26.972v.406zM22.37 19.815a1.545 1.545 0 0 1-1.126.461c-.383 0-.763-.14-1.128-.415l-.063-.055-2.243-2.283-.683-.695v8.778c0 .443-.167.848-.48 1.168a1.604 1.604 0 0 1-2.31.002 1.635 1.635 0 0 1-.483-1.17v-8.783l-.682.691-2.298 2.328c-.374.329-.762.495-1.154.495-.392 0-.78-.167-1.153-.495l-.055-.056c-.658-.767-.656-1.579-.002-2.337l.03-.031 5.821-5.841a1.74 1.74 0 0 1 1.149-.431c.439 0 .829.159 1.126.46l5.734 5.813c.761.773.761 1.624 0 2.396z"/>-->
-                    <!--</svg>-->
                     Login with Metamask
                 </button>
             </div>
@@ -91,8 +88,13 @@
                     Unlock
                 </button>
             </div>
-            <div v-if="this.unlockType == 'ledger'">
-
+            <div v-if="this.unlockType == 'ledger'" class="upload-btn-wrapper">
+                <div class="error-msg" v-if="errorMsgLedger !== null">
+                    {{ errorMsgLedger }}
+                </div>
+                <button class="btn" @click="loginLedger()">
+                    Login with Ledger
+                </button>
             </div>
         </div>
 </template>
@@ -100,6 +102,7 @@
 <script>
     import Web3 from 'web3'
     import ethWallet from 'ethereumjs-wallet'
+    import "@babel/polyfill"
     import AppEth from "@ledgerhq/hw-app-eth"
     import TransportU2F from "@ledgerhq/hw-transport-u2f"
 
@@ -119,10 +122,20 @@
     };
 
     const getEthAddress = async () => {
-      const transport = await TransportU2F.create();
-      const eth = new AppEth(transport);
-      const result = await eth.getAddress("44'/60'/0'/0/0");
-      return result;
+        return new Promise(async (resolve, reject) => {
+            try {
+              const transport = await TransportU2F.create();
+              const eth = new AppEth(transport);
+              const result = await eth.getAddress("44'/60'/0'/0/0");
+              resolve({address: result.address});
+            } catch (e){
+                let res = {
+                    error: e
+                };
+                reject(res);
+            }
+        });
+
     };
 
     export default {
@@ -133,7 +146,8 @@
                 keystore: null,
                 password: '',
                 unlocked: false,
-                errorMsg: null
+                errorMsg: null,
+                errorMsgLedger: null,
             }
         },
         methods: {
@@ -214,25 +228,46 @@
                     });
                 }
             },
+            async loginLedger() {
+                this.$store.commit('SHOW_SPINNER');
+                try {
+                    let result = await getEthAddress();
+                    if (typeof result.error === 'undefined') {
+                        this.$store.commit('SET_IS_USER_AUTHENTICATED', {
+                            isAuth: true,
+                            address: result.address,
+                            type: 'ledger'
+                        });
+                        this.errorMsg = null;
+                        this.errorMsgLedger = null;
+                        this.$router.push({ path: `/registration/2` })
+                    } else if (typeof result !== 'undefined') {
+                        this.errorMsgLedger = result.error.message;
+                    }
+                } catch(e) {
+                    console.log(e);
+                    this.errorMsgLedger = e.error.message;
+                    this.$store.commit('HIDE_SPINNER');
+                }
+                this.$store.commit('HIDE_SPINNER');
+            },
             async getContractAddress() {
                 const localweb3 = new Web3(new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider));
                 const contractAdr = this.$store.state.contracts.contractProxy;
                 const address = this.$store.state.user.address;
                 const abi = this.$store.state.contracts.proxyABI;
                 let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
                 return nodeContract.methods.getLastVersion().call((err, result) => {
-                    // console.log(err)
-                    // console.log(result.PlayMarket)
-                    // console.log(result)
+                    if (err)
+                        console.log(err)
                 });
             },
         },
         mounted: async function () {
-            // getEthAddress().then(a => console.log(a));
             let versions = await this.getContractAddress();
             if (typeof versions != 'undefined') {
                 let contractAddress = versions.PlayMarket;
+
                 this.$store.commit(
                     'SET_MAIN_CONTRACT',
                     {
