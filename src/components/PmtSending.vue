@@ -4,32 +4,7 @@
             Node registration
         </div>
         <p>Step 3 of 4: Node registration</p>
-        <ul class="steps">
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-load.png" alt="">
-                </span>
-                <p>Wallet unlock</p>
-            </li>
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-pm.png" alt="">
-                </span>
-                <p>Node settings</p>
-            </li>
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-config.png" alt="">
-                </span>
-                <p>ETH/PMT operation</p>
-            </li>
-            <li>
-                <span>
-                    <img src="../assets/images/icon-done.png" alt="">
-                </span>
-                <p>Node validation</p>
-            </li>
-        </ul>
+        <node-stage :currStage="3"></node-stage>
         <div v-if="tx != ''" class="transaction">
             <p>Transaction successfully sent. Transaction hash:</p>
             <a class="txHash" :href="$store.state.etherscan + '/tx/' + tx" target="_blank">
@@ -143,6 +118,7 @@
 </template>
 
 <script>
+    import NodeStage from '@/components/NodeStage.vue'
     import Web3 from 'web3'
     import ethTx from 'ethereumjs-tx'
 
@@ -888,6 +864,9 @@
                 updater = setTimeout(tick, 300*1000);
             }, 300*1000);
         },
+        components: {
+            NodeStage
+        }
     }
 </script>
 

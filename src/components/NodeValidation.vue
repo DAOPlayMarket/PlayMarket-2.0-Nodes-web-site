@@ -4,32 +4,7 @@
             Регистрация ноды
         </div>
         <p>Шаг 4 из 4: Настройки ноды</p>
-        <ul class="steps">
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-load.png" alt="">
-                </span>
-                <p>Загрузка ключа</p>
-            </li>
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-pm.png" alt="">
-                </span>
-                <p>Отправка PMT</p>
-            </li>
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-config.png" alt="">
-                </span>
-                <p>Настройка ноды</p>
-            </li>
-            <li class="selected">
-                <span>
-                    <img src="../assets/images/icon-done.png" alt="">
-                </span>
-                <p>Валидация ноды</p>
-            </li>
-        </ul>
+        <node-stage :currStage="4"></node-stage>
         <p>
             Все этапы пройдены успешно, пожалуйста дождитесь валидации ноды.
         </p>
@@ -42,7 +17,7 @@
             </span>
         </div>
         <div class="settings-btn-wrapper">
-            <button class="btn" @click="sendTransaction()">
+            <button class="btn" @click="">
                 <img src="../assets/images/icon-done.png" alt="">
                 Завершить создание ноды
             </button>
@@ -54,7 +29,7 @@
 </template>
 
 <script>
-
+    import NodeStage from '@/components/NodeStage.vue'
 
     export default {
         name: "node-validation",
@@ -62,56 +37,14 @@
             if (!this.$store.state.user.isUserAuthenticated) {
                 this.$router.push({ path: `/registration/1` })
             }
-            // web3.eth.getBalance(web3.eth.accounts[0], (err, balance) => {
-            //   console.log(web3.fromWei(balance, "ether") + " ETH");
-            // });
         },
         methods: {
             async sendTransaction() {
-              console.log('start');
-              const fromAccount = '0x4319825eefea536693aba06469e6de0b5e7693fe';
-              const toAccount = '0x3094940bbb0f4010104f9cc1f7d2aec827eee14f';
-              const amount = '0.0001';
 
-              // Use for example 2
-              const gas = "35000";
-              const gasPrice = "21000000000";
-
-            // Use for example 2
-              if (fromAccount != null && fromAccount.length > 0 &&
-                  toAccount != null && toAccount.length > 0 &&
-                  amount != null && amount.length > 0 &&
-                  gas != null && gas.length > 0 &&
-                  gasPrice != null && gasPrice.length > 0
-              ) {
-                // Example 1: Using the default MetaMask gas and gasPrice
-                let message = {from: fromAccount, to:toAccount, value: web3.toWei(amount, 'ether')};
-                // console.log(message);
-                // Example 2: Setting gas and gasPrice
-                // var message = {from: fromAccount, to:toAccount, value: web3.toWei(amount, 'ether'), gas: gas, gasPrice: gasPrice};
-
-                // Example 3: Using the default account
-                //web3.eth.defaultAccount = fromAccount;
-                //var message = {to:toAccount, value: web3.toWei(amount, 'ether')};
-                var result = web3.eth.sign('0x5ee74d1def74ba3316fb217d62d4689d870ce0bf', '0x9dd2c369a187b4e6b9c402f030e50743e619301ea62aa4c0737d4ef7e10a3d49',function(error, result){
-                    if(!error)
-                       console.log(JSON.stringify(result));
-                   else
-                       console.error(error);
-                });
-                console.log(result);
-
-                web3.eth.sendTransaction(message, (err, res) => {
-                  let output = "";
-                  if (!err) {
-                    output += res;
-                  } else {
-                    output = "Error";
-                  }
-                  console.log(output);
-                })
-              }
             }
+        },
+        components: {
+            NodeStage
         }
     }
 </script>

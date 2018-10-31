@@ -1763,12 +1763,12 @@ export default new Vuex.Store({
             tokenAddress: '',
             nodeAddress: '',
             contractAddress: '',
-            // contractPMT: '0xc1322d8ae3b0e2e437e0ae36388d0cfd2c02f1c9',
-			// contractProxy: '0x3A7075f150162d83EB2422735dfE6326b745c25B',
-            // web3provider: 'wss://mainnet.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b'б
-            contractPMT: '0x538106e553f5BA3298199C1998ba061922815A6c',
-            contractProxy: '0x87ef26717654c92b6ecc19e3c7a145406b112315',
-            web3provider: 'wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b',
+            contractPMT: '0xc1322d8ae3b0e2e437e0ae36388d0cfd2c02f1c9',
+			contractProxy: '0x3A7075f150162d83EB2422735dfE6326b745c25B',
+            web3provider: 'wss://mainnet.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b',
+            // contractPMT: '0x538106e553f5BA3298199C1998ba061922815A6c',
+            // contractProxy: '0x87ef26717654c92b6ecc19e3c7a145406b112315',
+            // web3provider: 'wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b',
 			contractStorage: ''
         },
 		etherscan: 'https://etherscan.io',

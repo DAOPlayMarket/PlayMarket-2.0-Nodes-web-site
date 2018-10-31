@@ -4,32 +4,7 @@
                 Node registration
             </div>
             <p>Step 1 of 4: Node registration</p>
-            <ul class="steps">
-                <li class="selected">
-                    <span>
-                        <img src="../assets/images/icon-load.png" alt="">
-                    </span>
-                    <p>Wallet unlock</p>
-                </li>
-                <li>
-                    <span>
-                        <img src="../assets/images/icon-pm.png" alt="">
-                    </span>
-                    <p>Node Settings</p>
-                </li>
-                <li>
-                    <span>
-                        <img src="../assets/images/icon-config.png" alt="">
-                    </span>
-                    <p>Making deposit</p>
-                </li>
-                <li>
-                    <span>
-                        <img src="../assets/images/icon-done.png" alt="">
-                    </span>
-                    <p>Node validation</p>
-                </li>
-            </ul>
+            <node-stage :currStage="1"></node-stage>
 
             <ul class="unlock-list">
                 <li>
@@ -100,6 +75,7 @@
 </template>
 
 <script>
+    import NodeStage from '@/components/NodeStage.vue'
     import Web3 from 'web3'
     import ethWallet from 'ethereumjs-wallet'
     import "@babel/polyfill"
@@ -276,6 +252,9 @@
                 );
             }
         },
+        components: {
+            NodeStage
+        }
     }
 </script>
 
