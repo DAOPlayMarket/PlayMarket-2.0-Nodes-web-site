@@ -1760,19 +1760,67 @@ export default new Vuex.Store({
 					"type": "event"
 				}
 			],
+			ABI_PMT: [
+               {
+                   "constant": false,
+                   "inputs": [
+                       { "name": "_spender", "type": "address" },
+                       { "name": "_value", "type": "uint256" }
+                   ],
+                   "name": "approve",
+                   "outputs": [
+                       { "name": "success", "type": "bool" }
+                   ],
+                   "payable": false,
+                   "stateMutability": "nonpayable",
+                   "type": "function"
+               },
+               {
+                   "constant": true,
+                   "inputs": [
+                       { "name": "_owner", "type": "address" },
+                       { "name": "_spender", "type": "address" }
+                   ],
+                   "name": "allowance",
+                   "outputs": [
+                       { "name": "", "type": "uint256", "value": "0" }
+                   ],
+                   "payable": false,
+                   "stateMutability": "view",
+                   "type": "function"
+               },
+               {
+                    "constant": true,
+                    "inputs": [
+                        {
+                            "name": "_owner",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "balanceOf",
+                    "outputs": [
+                        {
+                            "name": "balance",
+                            "type": "uint256"
+                        }
+                    ],
+                    "payable": false,
+                    "type": "function"
+               },
+            ],
             tokenAddress: '',
             nodeAddress: '',
             contractAddress: '',
             contractPMT: '0xc1322d8ae3b0e2e437e0ae36388d0cfd2c02f1c9',
-			contractProxy: '0x3A7075f150162d83EB2422735dfE6326b745c25B',
-            web3provider: 'wss://mainnet.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b',
+            contractProxy: '0x3A7075f150162d83EB2422735dfE6326b745c25B',
+            web3provider: 'wss://mainnet.infura.io/ws/v3/8a509424b9c14ab1a424ee9f6c3e457b',
             // contractPMT: '0x538106e553f5BA3298199C1998ba061922815A6c',
             // contractProxy: '0x87ef26717654c92b6ecc19e3c7a145406b112315',
-            // web3provider: 'wss://rinkeby.infura.io/ws/8a509424b9c14ab1a424ee9f6c3e457b',
-			contractStorage: ''
+            // web3provider: 'wss://rinkeby.infura.io/ws/v3/8a509424b9c14ab1a424ee9f6c3e457b',
+			// contractStorage: ''
         },
 		etherscan: 'https://etherscan.io',
-		chainId: 4
+		chainId: 1
     },
     mutations: {
         UPDATE_SEARCH_KEY(state, searchKey) {

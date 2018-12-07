@@ -130,125 +130,72 @@
         methods: {
             async addNode() {
                 this.$store.commit('SHOW_SPINNER');
-                const contractAdr = this.$store.state.contracts.contractAddress;
-                const address = this.$store.state.user.address;
-                const abi = this.$store.state.contracts.ABI;
 
-                let localweb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
-                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                let txData = nodeContract.methods.addNode(this.hashType, this.hash, this.ip, this.coordinates).encodeABI();
-                let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
-                let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                    from: address,
-                    to: contractAdr,
-                    data: txData,
-                    value: localweb3.utils.toHex(0)
-                }) + 100000);
-
-                let txParams = {
-                    nonce: localweb3.utils.toHex(nonce),
-                    gasPrice: gasPrice,
-                    gasLimit: gasLimit,
-                    value: '0x00',
-                    to: contractAdr,
-                    from: address,
-                    data: txData,
-                    chainId: this.$store.state.chainId
-                };
-
-                if (this.$store.state.user.unlockType == 'keystore') {
-                    let tx = new ethTx(txParams);
-                    tx.sign(this.$store.state.user.wallet._privKey);
-                    let serializedTx = tx.serialize();
-
-                    let raw = "0x" + serializedTx.toString("hex");
-
-                    localweb3.eth.sendSignedTransaction(raw, function (err, transactionHash) {
-                      this.tx = transactionHash;
-                    });
-                } else if (this.$store.state.user.unlockType == 'metamask') {
-                    localweb3.eth.sendTransaction(txParams, function (err, transactionHash) {
-                      this.tx = transactionHash.transactionHash;
-                    });
-                } else if (this.$store.state.user.unlockType == 'ledger') {
-                    txParams['v'] = "0x0" + this.$store.state.chainId;
-                    let tx = new ethTx(txParams);
-                    let serialized = tx.serialize().toString('hex');
-                    const transportU2F = await TransportU2F.create();
-                    const eth = new AppEth(transportU2F);
-                    //Подписываем транзакцию LEDGER
-                    let svr = await eth.signTransaction("44'/60'/0'/0/0", serialized);
-                    txParams['r'] = '0x' + svr.r;
-                    txParams['s'] = '0x' + svr.s;
-                    txParams['v'] = '0x' + svr.v;
-                    let txSigned = new ethTx(txParams);
-                    serialized = txSigned.serialize();
-                    let raw = "0x" + serialized.toString("hex");
-                    let txInfo = await localweb3.eth.sendSignedTransaction(raw, () => {});
-                    this.tx = txInfo.transactionHash;
+                let param = [
+                    this.$store.state.contracts.contractAddress,
+                    this.$store.state.user.address,
+                    this.$store.state.contracts.ABI,
+                    'addNode',
+                    [
+                        this.hashType, this.hash, this.ip, this.coordinates
+                    ]
+                ];
+                let result = this.sendTransaction(...param);
+                if (result.hash) {
+                    this.tx = result.hash;
+                } else {
+                    console.log(result.error)
                 }
+
                 this.$store.commit('HIDE_SPINNER');
             },
             async changeInfoNode() {
                 this.$store.commit('SHOW_SPINNER');
-                const contractAdr = this.$store.state.contracts.contractAddress;
-                const address = this.$store.state.user.address;
-                const abi = this.$store.state.contracts.ABI;
-                let localweb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
-                let nonce = await localweb3.eth.getTransactionCount(address, "pending");
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-                let txData = nodeContract.methods.changeInfoNode(this.hash, this.hashType, this.ip, this.coordinates).encodeABI();
-                let gasPrice = await localweb3.utils.toHex(await localweb3.eth.getGasPrice());
-
-                let gasLimit = await localweb3.utils.toHex(await localweb3.eth.estimateGas({
-                    from: address,
-                    to: contractAdr,
-                    data: txData,
-                    value: localweb3.utils.toHex(0)
-                }) + 100000);
-
-                let txParams = {
-                    nonce: localweb3.utils.toHex(nonce),
-                    gasPrice: gasPrice,
-                    gasLimit: gasLimit,
-                    value: '0x00',
-                    to: contractAdr,
-                    from: address,
-                    data: txData,
-                    chainId: this.$store.state.chainId
-                };
-
-                if (this.$store.state.user.unlockType == 'keystore') {
-                    let tx = new ethTx(txParams);
-                    tx.sign(this.$store.state.user.wallet._privKey);
-                    let serializedTx = tx.serialize();
-                    let raw = "0x" + serializedTx.toString("hex");
-                    let transaction = await localweb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
-                    this.tx = transaction.transactionHash;
-                } else if (this.$store.state.user.unlockType == 'metamask') {
-                    let transaction = await localweb3.eth.sendTransaction(txParams, () => {});
-                    this.tx = transaction.transactionHash;
-                } else if (this.$store.state.user.unlockType == 'ledger') {
-                    txParams['v'] = "0x0" + this.$store.state.chainId;
-                    let tx = new ethTx(txParams);
-                    let serialized = tx.serialize().toString('hex');
-                    const transportU2F = await TransportU2F.create();
-                    const eth = new AppEth(transportU2F);
-                    //Подписываем транзакцию LEDGER
-                    let svr = await eth.signTransaction("44'/60'/0'/0/0", serialized);
-                    txParams['r'] = '0x' + svr.r;
-                    txParams['s'] = '0x' + svr.s;
-                    txParams['v'] = '0x' + svr.v;
-                    let txSigned = new ethTx(txParams);
-                    serialized = txSigned.serialize();
-                    let raw = "0x" + serialized.toString("hex");
-                    let txInfo = await localweb3.eth.sendSignedTransaction(raw, () => {});
-                    this.tx = txInfo.transactionHash;
+                let param = [
+                    this.$store.state.contracts.contractAddress,
+                    this.$store.state.user.address,
+                    this.$store.state.contracts.ABI,
+                    'changeInfoNode',
+                    [
+                        this.hash, this.hashType, this.ip, this.coordinates
+                    ]
+                ];
+                let result = await this.sendTransaction(...param);
+                if (result.hash) {
+                    this.tx = result.hash;
+                } else {
+                    console.log(result.error)
                 }
                 this.$store.commit('HIDE_SPINNER');
             },
             async getInfoNode() {
+                try {
+                    let param = [
+                        this.$store.state.contracts.contractAddress,
+                        'getInfoNode',
+                        this.$store.state.contracts.ABI,
+                        [this.$store.state.user.address]
+                    ];
+
+                    let result = await this.callContractFunction(...param);
+                    this.regStatus = typeof result != 'undefined';
+                    if (this.regStatus) {
+                        this.hashType = result[0];
+                        if (this.hashType == 1) {
+                            this.hashTag = 'IPFS';
+                        }
+                        this.hash = result[3];
+                        this.ip = result[4];
+                        this.coordinates = result[5];
+                        this.getConfirmationNode();
+                    }
+                    return result;
+                } catch (e) {
+                    console.log(e);
+                    return false;
+                }
+            },
+            async getConfirmationNode() {
                 const contractAdr = this.$store.state.contracts.contractAddress;
                 const address = this.$store.state.user.address;
                 const abi = this.$store.state.contracts.ABI;
@@ -273,19 +220,6 @@
                         return false;
                     }
                 }
-            },
-            async getConfirmationNode() {
-                const abi = this.$store.state.contracts.ABI;
-                const localweb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
-                const contractAdr = this.$store.state.contracts.contractAddress;
-                const address = this.$store.state.user.address;
-                let nodeContract = new localweb3.eth.Contract(abi, contractAdr);
-
-                nodeContract.methods.getConfirmationNode(address).call((err, result) => {
-                  if (typeof result != 'undefined') {
-                      this.nodeConfirmation = result;
-                  }
-                });
             },
             async getUserCoordinates() {
                 let position = '';
@@ -320,6 +254,79 @@
                 let nodeInfo = await this.getInfoNode();
                 this.coordinates = await this.getUserCoordinates();
                 this.$store.commit('HIDE_SPINNER');
+            },
+            async sendTransaction(contract, owner, abi, functionName, param) {
+                let localWeb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
+
+                let nodeContract = new localWeb3.eth.Contract(abi, contract);
+                let txData = nodeContract.methods[functionName](...param).encodeABI();
+                let nonce = await localWeb3.eth.getTransactionCount(owner, "pending");
+                let gasPrice = await localWeb3.utils.toHex(await localWeb3.eth.getGasPrice());
+                let gasLimit = await localWeb3.utils.toHex(await localWeb3.eth.estimateGas({
+                    from: owner,
+                    to: contract,
+                    data: txData,
+                    value: localWeb3.utils.toHex(0)
+                }) + 100000);
+
+                let txParams = {
+                    from: owner,
+                    nonce: localWeb3.utils.toHex(nonce),
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    value: '0x00',
+                    to: contract,
+                    data: txData,
+                    chainId: this.$store.state.chainId
+                };
+
+                if (this.$store.state.user.unlockType == 'keystore') {
+                    let tx = new ethTx(txParams);
+                    tx.sign(this.$store.state.user.wallet._privKey);
+                    let serializedTx = tx.serialize();
+                    let raw = "0x" + serializedTx.toString("hex");
+                    let transaction = await localWeb3.eth.sendSignedTransaction(raw, (err, transactionHash) => {});
+                    return {hash : transaction.transactionHash, error: transaction.error};
+                } else if (this.$store.state.user.unlockType == 'metamask') {
+                    let transaction = await localWeb3.eth.sendTransaction(txParams, (err, transactionHash) => {});
+                    console.log(transaction)
+                    return {hash : transaction.transactionHash, error: transaction.error};
+                } else if (this.$store.state.user.unlockType == 'ledger') {
+                    txParams['v'] = "0x0" + this.$store.state.chainId;
+                    let tx = new ethTx(txParams);
+                    let serialized = tx.serialize().toString('hex');
+                    const transportU2F = await TransportU2F.create();
+                    const eth = new AppEth(transportU2F);
+                    //Подписываем транзакцию LEDGER
+                    let svr = await eth.signTransaction("44'/60'/0'/0/0", serialized);
+                    txParams['r'] = '0x' + svr.r;
+                    txParams['s'] = '0x' + svr.s;
+                    txParams['v'] = '0x' + svr.v;
+                    let txSigned = new ethTx(txParams);
+                    serialized = txSigned.serialize();
+                    let raw = "0x" + serialized.toString("hex");
+                    let txInfo = await localWeb3.eth.sendSignedTransaction(raw, () => {});
+                    return {hash : txInfo.transactionHash, error: txInfo.error};
+                }
+            },
+            async callContractFunction(contractAdr, functionName, abi, param) {
+                let localWeb3 = new Web3(this.getWeb3provider(this.$store.state.user.unlockType));
+                let nodeContract = new localWeb3.eth.Contract(abi, contractAdr);
+                return await nodeContract.methods[functionName](...param).call();
+            },
+            getWeb3provider(unlockType) {
+                if (unlockType == 'keystore' || unlockType == 'ledger') {
+                    return new Web3.providers.WebsocketProvider(this.$store.state.contracts.web3provider);
+                } else if (unlockType == 'metamask') {
+                    if (window.ethereum) {
+                        return ethereum;
+                    } else if (typeof web3 !== 'undefined') {
+                        return window.web3.currentProvider;
+                    } else {
+                        console.log('MetaMask is not installed')
+                        return false;
+                    }
+                }
             }
         },
         mounted: async function () {
@@ -365,64 +372,7 @@
         padding-bottom: 10px
         p
             font-weight: 600
-    .steps
-        position: relative
-        display: flex
-        width: 400px
-        padding: 35px 15px
-        z-index: 45
-        text-align: center
-        &:before
-            content: ''
-            height: 1px
-            width: 100%
-            /*background: #00e7d5*/
-            background: #c6c6c6
-            position: absolute
-            top: 59px
-            left: 0
-            z-index: 43
-        li
-            margin-right: 69px
-            position: relative
-            z-index: 45
-            display: flex
-            align-items: center
-            justify-content: center
-            flex-direction: column
-            p
-                padding-top: 13px
-            img
-            span
-                display: flex
-                height: 48px
-                width: 48px
-                align-items: center
-                justify-content: center
-                background-color: #c6c6c6
-                border-radius: 100%
-        li:nth-child(4)
-            margin-right: 0
-        .selected
-            position: relative
-            z-index: 48
-            color: #00e7d5
-            span
-                background-color: #00e7d5
-                &:before
-                    content: ''
-                    height: 1px
-                    width: 90px
-                    position: absolute
-                    top: 24px
-                    left: -75px
-                    z-index: 44
-                    background: #00e7d5
-                img
-                    z-index: 45
-        .selected:nth-child(1) > span:before
-                width: 100%
-                left: -15px
+
     .info
         p
             padding-bottom: 20px

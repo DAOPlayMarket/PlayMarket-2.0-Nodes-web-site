@@ -277,61 +277,7 @@
         letter-spacing: 0.2px
         text-align: left
         color: #67777b
-    .steps
-        position: relative
-        display: flex
-        width: 400px
-        padding: 35px 15px
-        z-index: 45
-        text-align: center
-        &:before
-            content: ''
-            height: 1px
-            width: 100%
-            /*background: #00e7d5*/
-            background: #c6c6c6
-            position: absolute
-            top: 59px
-            left: 0
-            z-index: 43
-        li
-            margin-right: 69px
-            position: relative
-            z-index: 45
-            display: flex
-            align-items: center
-            justify-content: center
-            flex-direction: column
-            p
-                padding-top: 13px
-            img
-            span
-                display: flex
-                height: 48px
-                width: 48px
-                align-items: center
-                justify-content: center
-                background-color: #c6c6c6
-                border-radius: 100%
-        li:nth-child(4)
-            margin-right: 0
-        .selected
-            position: relative
-            z-index: 48
-            color: #00e7d5
-            span
-                background-color: #00e7d5
-                &:before
-                    content: ''
-                    height: 1px
-                    width: 100%
-                    position: absolute
-                    top: 24px
-                    left: -15px
-                    z-index: 44
-                    background: #00e7d5
-                img
-                    z-index: 45
+
     .unlock-list
         li
             padding: 15px
